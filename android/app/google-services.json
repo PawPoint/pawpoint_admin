@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "364834271222",
+    "project_id": "pawpoint-admin",
+    "storage_bucket": "pawpoint-admin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:364834271222:android:57146bc0876867fce4e1d7",
+        "android_client_info": {
+          "package_name": "com.example.pawpoint_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwrbNyXBZVJmJOHhZLYFizXxjN1Eob-qc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
