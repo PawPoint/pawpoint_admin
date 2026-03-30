@@ -41,46 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBx7X1PKwB-56_Pgq0Mrra8rfgIk876Mvc',
-    appId: '1:364834271222:web:938049212f8bf02de4e1d7',
-    messagingSenderId: '364834271222',
-    projectId: 'pawpoint-admin',
-    authDomain: 'pawpoint-admin.firebaseapp.com',
-    storageBucket: 'pawpoint-admin.firebasestorage.app',
+    apiKey: 'AIzaSyB5pNeP4s5f3WF8Du6_oVTNce7vykswgc0',
+    appId: '1:325353125400:web:ec39a0e67e20769d9a356d',
+    messagingSenderId: '325353125400',
+    projectId: 'pawpoint-8822d',
+    authDomain: 'pawpoint-8822d.firebaseapp.com',
+    storageBucket: 'pawpoint-8822d.firebasestorage.app',
+    measurementId: 'G-P8Q6RE577H',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAwrbNyXBZVJmJOHhZLYFizXxjN1Eob-qc',
-    appId: '1:364834271222:android:57146bc0876867fce4e1d7',
-    messagingSenderId: '364834271222',
-    projectId: 'pawpoint-admin',
-    storageBucket: 'pawpoint-admin.firebasestorage.app',
+    apiKey: 'AIzaSyChKD0gpZPQ-KSiaZaZmubJ1oJLhjKbDC0',
+    appId: '1:325353125400:android:1931caad45aa895c9a356d',
+    messagingSenderId: '325353125400',
+    projectId: 'pawpoint-8822d',
+    storageBucket: 'pawpoint-8822d.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCdyOyiYTIiDlocfwLDo25ksJ9xyIDIYcM',
-    appId: '1:364834271222:ios:b418187469611b5de4e1d7',
-    messagingSenderId: '364834271222',
-    projectId: 'pawpoint-admin',
-    storageBucket: 'pawpoint-admin.firebasestorage.app',
+    apiKey: 'AIzaSyBW-lHS9oGOqXPMAuLzCInNsLYL4OvjvT0',
+    appId: '1:325353125400:ios:6dfca9294a2ac2e79a356d',
+    messagingSenderId: '325353125400',
+    projectId: 'pawpoint-8822d',
+    storageBucket: 'pawpoint-8822d.firebasestorage.app',
     iosBundleId: 'com.example.pawpointAdmin',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCdyOyiYTIiDlocfwLDo25ksJ9xyIDIYcM',
-    appId: '1:364834271222:ios:b418187469611b5de4e1d7',
-    messagingSenderId: '364834271222',
-    projectId: 'pawpoint-admin',
-    storageBucket: 'pawpoint-admin.firebasestorage.app',
+    apiKey: 'AIzaSyBW-lHS9oGOqXPMAuLzCInNsLYL4OvjvT0',
+    appId: '1:325353125400:ios:6dfca9294a2ac2e79a356d',
+    messagingSenderId: '325353125400',
+    projectId: 'pawpoint-8822d',
+    storageBucket: 'pawpoint-8822d.firebasestorage.app',
     iosBundleId: 'com.example.pawpointAdmin',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBx7X1PKwB-56_Pgq0Mrra8rfgIk876Mvc',
-    appId: '1:364834271222:web:5e6996191e6d671ee4e1d7',
-    messagingSenderId: '364834271222',
-    projectId: 'pawpoint-admin',
-    authDomain: 'pawpoint-admin.firebaseapp.com',
-    storageBucket: 'pawpoint-admin.firebasestorage.app',
+    apiKey: 'AIzaSyB5pNeP4s5f3WF8Du6_oVTNce7vykswgc0',
+    appId: '1:325353125400:web:1647fc66cc99a55e9a356d',
+    messagingSenderId: '325353125400',
+    projectId: 'pawpoint-8822d',
+    authDomain: 'pawpoint-8822d.firebaseapp.com',
+    storageBucket: 'pawpoint-8822d.firebasestorage.app',
+    measurementId: 'G-JK33X6H63P',
   );
+
 }
