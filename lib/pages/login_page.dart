@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../pages/staffadmin_dashboard.dart'; 
-import '../pages/superadmin_dashboard.dart';
 
-// Core UI & Utility Imports (based on your structure)
-import 'package:pawpoint_admin/auth/auth_service.dart';
-import '../../core/widgets/app_text_field.dart';
-import '../../core/widgets/app_button.dart';
-import '../../core/widgets/app_logo.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
-import '../../core/utils/validators.dart';
-import '../../core/utils/error_handler.dart';
+// Core UI & Utility Imports (shared with user app)
+import '../core/widgets/app_text_field.dart';
+import '../core/widgets/app_button.dart';
+import '../core/widgets/app_logo.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_text_styles.dart';
+import '../core/utils/validators.dart';
+import '../core/utils/error_handler.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -35,6 +32,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ── Same visual structure as the user LoginPage ────────────────────────
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -43,77 +41,76 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              // Header Row with Back Button and Logo
+              // Header Row – back button + logo
               Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.maybePop(context),
                   ),
                   const Spacer(),
                   const AppLogo(width: 250),
                   const Spacer(),
-                  const SizedBox(width: 48), // Balances the back button width
+                  const SizedBox(width: 48),
                 ],
               ),
-              
-              const Spacer(),
-              
-              // Admin Portal Label
-              Text(
-                "ADMIN PORTAL",
-                style: AppTextStyles.h1.copyWith(
-                  letterSpacing: 2,
-                  color: Colors.black87,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 30),
 
-              // Email Field with the overlaying Image
+              const Spacer(),
+
+              // Email field with decorative cat image (same as user login)
               Stack(
                 alignment: Alignment.bottomCenter,
                 clipBehavior: Clip.none,
                 children: [
                   AppTextField(
                     controller: _emailController,
-                    hint: "Admin Email",
+                    hint: 'Email',
                     isRounded: false,
                     keyboardType: TextInputType.emailAddress,
                   ),
                   Positioned(
                     bottom: -30,
                     child: Image.asset(
-                      "assets/images/c1.png",
+                      'assets/images/c1-removebg-preview.png',
                       width: 350,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 15),
-              
-              // Password Field
+
               AppTextField(
                 controller: _passwordController,
-                hint: "Admin Password",
+                hint: 'Password',
                 obscureText: true,
                 isRounded: false,
               ),
-              
+
               const SizedBox(height: 40),
-              
-              // Login Button
+
               AppButton(
-                text: "ADMIN LOGIN",
+                text: 'LOGIN',
                 isLoading: _isLoading,
                 onPressed: _handleAdminLogin,
               ),
-              
-              // Spacer at the bottom to keep layout centered
-              const Spacer(flex: 2),
+
+              const SizedBox(height: 20),
+
+              // Small label so staff know this is the admin portal
+              Text(
+                'Admin Portal',
+                style: AppTextStyles.h1.copyWith(
+                  fontSize: 12,
+                  color: Colors.black38,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const Spacer(),
             ],
           ),
         ),
@@ -121,85 +118,62 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     );
   }
 
-  /// Logic to handle Admin Login and Role-based Redirection
+  // ── Login handler following the blueprint gatekeeper logic ─────────────
   Future<void> _handleAdminLogin() async {
-    final email = _emailController.text.trim();
+    final email    = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // 1. Basic Validation
     final emailError = Validators.validateEmail(email);
-    if (emailError != null) {
-      _showErrorSnackBar(emailError);
-      return;
-    }
+    if (emailError != null) { _showError(emailError); return; }
 
-    final passwordError = Validators.validateRequired(password, "Password");
-    if (passwordError != null) {
-      _showErrorSnackBar(passwordError);
-      return;
-    }
+    final passError = Validators.validateRequired(password, 'Password');
+    if (passError != null) { _showError(passError); return; }
 
     setState(() => _isLoading = true);
 
     try {
-      // 2. Firebase Auth Login
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Step 1 – Firebase Auth verification
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      final uid = credential.user!.uid;
 
-      final String uid = userCredential.user!.uid;
-
-      // 3. Fetch Role from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
+      // Step 2 – Query the 'admins' collection for role
+      DocumentSnapshot adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
           .doc(uid)
           .get();
 
-      if (!userDoc.exists) {
-        await FirebaseAuth.instance.signOut();
-        throw Exception("Account data not found in system.");
-      }
-
-      // Extract the role from the document
-      final data = userDoc.data() as Map<String, dynamic>;
-      final String role = data['role'] ?? '';
-
       if (!mounted) return;
 
-      // 4. Conditional Navigation
-        if (role == 'super_admin') {
-          // Clears all previous screens and goes to Super Admin
-          Navigator.pushNamedAndRemoveUntil(context, '/super_admin', (route) => false);
-        } else if (role == 'staff_admin') {
-          // Clears all previous screens and goes to Staff Admin
-          Navigator.pushNamedAndRemoveUntil(context, '/staff_admin', (route) => false);
-        } else {
-          // If they are a regular user or have no admin role, log them out
-          await FirebaseAuth.instance.signOut();
-          _showErrorSnackBar("Access Denied: You do not have admin privileges.");
-        }
-
-    } catch (e) {
-      if (mounted) {
-        _showErrorSnackBar(ErrorHandler.getErrorMessage(e));
+      if (!adminDoc.exists) {
+        // UID not in admins collection → force logout
+        await FirebaseAuth.instance.signOut();
+        _showError('Unauthorized Access: This account has no admin privileges.');
+        return;
       }
+
+      final data = adminDoc.data() as Map<String, dynamic>;
+      final String role = data['role'] ?? '';
+
+      // Step 3 – Role-based routing
+      if (role == 'super_admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/super_admin', (_) => false);
+      } else if (role == 'staff_admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/staff_admin', (_) => false);
+      } else {
+        await FirebaseAuth.instance.signOut();
+        _showError('Unauthorized Access: Unknown role assigned to this account.');
+      }
+    } catch (e) {
+      if (mounted) _showError(ErrorHandler.getErrorMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  /// Helper to clear stack and navigate
-  void _navigateToDashboard(Widget dashboard) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => dashboard),
-      (route) => false,
-    );
-  }
-
-  /// Reusable Error SnackBar matching your app style
-  void _showErrorSnackBar(String message) {
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

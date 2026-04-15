@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:pawpoint_admin/pages/login_page.dart';
 import 'package:pawpoint_admin/pages/splash_screen.dart';
 import 'package:pawpoint_admin/pages/superadmin_dashboard.dart';
@@ -7,7 +8,9 @@ import 'package:pawpoint_admin/pages/staffadmin_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -21,12 +24,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6366F1)),
       ),
-      // Define the starting page
       initialRoute: '/',
-      
-      // Define all possible screens here
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const AdminLoginPage(),
