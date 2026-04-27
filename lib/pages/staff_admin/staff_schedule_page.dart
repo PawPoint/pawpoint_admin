@@ -242,7 +242,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                         color: isSelected
                             ? const Color(0xFF10B981)
                             : isToday
-                                ? const Color(0xFF10B981).withOpacity(0.12)
+                                ? const Color(0xFF10B981).withValues(alpha: 0.12)
                                 : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -305,7 +305,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.12),
+              color: const Color(0xFF10B981).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text('$count appt${count == 1 ? '' : 's'}',
@@ -375,7 +375,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 3))
         ],
@@ -413,7 +413,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(status,

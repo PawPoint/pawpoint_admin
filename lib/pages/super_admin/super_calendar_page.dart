@@ -129,7 +129,7 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                     color: isSelected
                         ? const Color(0xFF6366F1)
                         : isToday
-                            ? const Color(0xFF6366F1).withOpacity(0.2)
+                            ? const Color(0xFF6366F1).withValues(alpha: 0.2)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: isToday && !isSelected
@@ -197,7 +197,7 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [

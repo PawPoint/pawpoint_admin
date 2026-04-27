@@ -87,7 +87,9 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
                   ? null
                   : () async {
                       if (nameCtrl.text.trim().isEmpty ||
-                          priceCtrl.text.trim().isEmpty) return;
+                          priceCtrl.text.trim().isEmpty) {
+                        return;
+                      }
                       setLocal(() => isSaving = true);
                       try {
                         final price =
@@ -279,7 +281,7 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
           Container(
             width: 48, height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.medical_services_rounded, color: color, size: 22),
@@ -317,7 +319,7 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text('Edit',

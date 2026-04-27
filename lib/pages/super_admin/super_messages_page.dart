@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,145 +12,330 @@ class SuperMessagesPage extends StatefulWidget {
 }
 
 class _SuperMessagesPageState extends State<SuperMessagesPage> {
-  List<dynamic> _conversations = [];
-  bool _loading = true;
-  Map<String, dynamic>? _active; // active conversation
+  // ── State ──────────────────────────────────────────────────────────────────
+  String? _activeConvId;
+  String? _activePeerName;
+  String? _activePeerUid;
+
+  List<Map<String, dynamic>> _conversations = [];
+  List<Map<String, dynamic>> _messages = [];
+  List<Map<String, dynamic>> _staff = [];
+
+  bool _loadingConvs = true;
+  bool _loadingMsgs = false;
+
   final TextEditingController _msgCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
 
-  String get _myUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  Timer? _convTimer;
+  Timer? _msgTimer;
 
+  String get _myUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+  String get _myName =>
+      FirebaseAuth.instance.currentUser?.displayName ?? 'Super Admin';
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadConversations();
+    _loadStaff();
+    // Poll conversations every 5 seconds
+    _convTimer = Timer.periodic(const Duration(seconds: 5), (_) => _loadConversations());
   }
 
   @override
   void dispose() {
+    _convTimer?.cancel();
+    _msgTimer?.cancel();
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  // ── Data loading ───────────────────────────────────────────────────────────
+  Future<void> _loadStaff() async {
     try {
-      final data = await AdminApiService.fetchAllConversations();
-      if (mounted) setState(() { _conversations = data; _loading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _send() async {
-    if (_active == null || _msgCtrl.text.trim().isEmpty) return;
-    final convId = _active!['conversation_id'] as String;
-    final parts = convId.split('__');
-    final receiverId = parts.firstWhere((p) => p != _myUid, orElse: () => parts[0]);
-    try {
-      await AdminApiService.sendMessage(
-        senderId: _myUid,
-        receiverId: receiverId,
-        content: _msgCtrl.text.trim(),
-        senderName: FirebaseAuth.instance.currentUser?.displayName ?? 'Super Admin',
-        senderRole: 'super_admin',
-      );
-      _msgCtrl.clear();
-      _load();
+      final staff = await AdminApiService.fetchStaff();
+      if (mounted) setState(() => _staff = List<Map<String, dynamic>>.from(staff));
     } catch (_) {}
   }
 
+  Future<void> _loadConversations() async {
+    if (_myUid.isEmpty) return;
+    try {
+      // Super admin fetches ALL conversations
+      final convs = await AdminApiService.fetchAllConversations();
+      if (mounted) {
+        setState(() {
+          _conversations = List<Map<String, dynamic>>.from(convs);
+          _loadingConvs = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingConvs = false);
+    }
+  }
+
+  Future<void> _loadMessages(String convId) async {
+    if (mounted) setState(() => _loadingMsgs = true);
+    try {
+      final convs = await AdminApiService.fetchAllConversations();
+      final match = convs.cast<Map<String, dynamic>>()
+          .where((c) => c['conversation_id'] == convId)
+          .toList();
+      final msgs = match.isNotEmpty
+          ? List<Map<String, dynamic>>.from(match.first['messages'] ?? [])
+          : <Map<String, dynamic>>[];
+      if (mounted) {
+        setState(() {
+          _messages = msgs;
+          _loadingMsgs = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMsgs = false);
+    }
+  }
+
+  void _openConversation(String convId, String peerName, String peerUid) {
+    _msgTimer?.cancel();
+    setState(() {
+      _activeConvId = convId;
+      _activePeerName = peerName;
+      _activePeerUid = peerUid;
+      _messages = [];
+    });
+    _loadMessages(convId);
+    // Poll messages every 3 seconds
+    _msgTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (_activeConvId == convId) _loadMessages(convId);
+    });
+  }
+
+  void _scrollToBottom() {
+    if (_scrollCtrl.hasClients) {
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  // ── Send ───────────────────────────────────────────────────────────────────
+  Future<void> _send() async {
+    final text = _msgCtrl.text.trim();
+    if (_activePeerUid == null || text.isEmpty) return;
+    _msgCtrl.clear();
+    try {
+      await AdminApiService.sendMessage(
+        senderId: _myUid,
+        receiverId: _activePeerUid!,
+        content: text,
+        senderName: _myName,
+        senderRole: 'super_admin',
+      );
+      if (_activeConvId != null) await _loadMessages(_activeConvId!);
+      await _loadConversations();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send message')),
+        );
+      }
+    }
+  }
+
+  // ── Start New Chat ─────────────────────────────────────────────────────────
+  void _startNewChat() {
+    if (_staff.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loading contacts...')),
+      );
+      _loadStaff();
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('New Message',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: _staff.where((m) => m['uid'] != _myUid).isEmpty
+              ? Center(
+                  child: Text('No staff available',
+                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+                )
+              : ListView(
+                  children: _staff
+                      .where((m) => m['uid'] != _myUid)
+                      .map((member) {
+                    final uid = member['uid'] as String? ?? '';
+                    final name = member['name'] as String? ?? 'Staff';
+                    final role = member['role'] as String? ?? '';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                        child: const Icon(Icons.medical_services_rounded,
+                            color: Color(0xFF6366F1), size: 18),
+                      ),
+                      title: Text(name,
+                          style: GoogleFonts.poppins(
+                              color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                      subtitle: Text(role,
+                          style: GoogleFonts.poppins(
+                              color: const Color(0xFF94A3B8), fontSize: 11)),
+                      onTap: () {
+                        final convId = ([_myUid, uid]..sort()).join('__');
+                        Navigator.pop(ctx);
+                        _openConversation(convId, name, uid);
+                      },
+                    );
+                  }).toList(),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helper: resolve peer name ──────────────────────────────────────────────
+  String _peerName(Map<String, dynamic> conv) {
+    final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
+    final peerUid = participants.firstWhere((p) => p != _myUid, orElse: () => '');
+    if (peerUid.isEmpty) return 'Unknown';
+    final match = _staff.where((s) => s['uid'] == peerUid).toList();
+    if (match.isNotEmpty) return match.first['name'] as String? ?? peerUid;
+    return peerUid;
+  }
+
+  String _peerUid(Map<String, dynamic> conv) {
+    final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
+    return participants.firstWhere((p) => p != _myUid, orElse: () => '');
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF0F172A),
-      child: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
-          : Row(
+      child: Row(
+        children: [
+          _buildSidebar(),
+          Expanded(
+            child: _activeConvId == null ? _buildEmptyState() : _buildChatPanel(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 280,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E293B),
+        border: Border(right: BorderSide(color: Color(0xFF334155))),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Conversation list
-                Container(
-                  width: 260,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1E293B),
-                    border: Border(right: BorderSide(color: Color(0xFF334155))),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text('Conversations',
-                            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                      ),
-                      Expanded(
-                        child: _conversations.isEmpty
-                            ? Center(
-                                child: Text('No messages',
-                                    style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13)),
-                              )
-                            : ListView.builder(
-                                itemCount: _conversations.length,
-                                itemBuilder: (_, i) {
-                                  final conv = _conversations[i];
-                                  final msgs = conv['messages'] as List? ?? [];
-                                  final last = msgs.isNotEmpty ? msgs.last : null;
-                                  final isActive = _active != null &&
-                                      _active!['conversation_id'] == conv['conversation_id'];
-                                  return ListTile(
-                                    selected: isActive,
-                                    selectedTileColor: const Color(0xFF6366F1).withOpacity(0.1),
-                                    leading: CircleAvatar(
-                                      backgroundColor: const Color(0xFF6366F1).withOpacity(0.2),
-                                      child: const Icon(Icons.medical_services_rounded,
-                                          color: Color(0xFF6366F1), size: 18),
-                                    ),
-                                    title: Text(
-                                      conv['conversation_id'] as String,
-                                      style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: last != null
-                                        ? Text(last['content'] as String? ?? '',
-                                            style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis)
-                                        : null,
-                                    onTap: () => setState(() => _active = conv),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Chat panel
-                Expanded(
-                  child: _active == null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.chat_bubble_outline_rounded,
-                                  color: Color(0xFF334155), size: 56),
-                              const SizedBox(height: 16),
-                              Text('Select a conversation',
-                                  style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
-                            ],
-                          ),
-                        )
-                      : _buildChatPanel(),
+                Text('Conversations',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                IconButton(
+                  icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF6366F1)),
+                  tooltip: 'New Chat',
+                  onPressed: _startNewChat,
                 ),
               ],
             ),
+          ),
+          Expanded(
+            child: _loadingConvs
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                : _conversations.isEmpty
+                    ? Center(
+                        child: Text('No conversations yet',
+                            style: GoogleFonts.poppins(
+                                color: const Color(0xFF64748B), fontSize: 13)),
+                      )
+                    : ListView.builder(
+                        itemCount: _conversations.length,
+                        itemBuilder: (_, i) {
+                          final conv = _conversations[i];
+                          final convId = conv['conversation_id'] as String? ?? '';
+                          final isActive = _activeConvId == convId;
+                          final name = _peerName(conv);
+                          final pUid = _peerUid(conv);
+                          return ListTile(
+                            selected: isActive,
+                            selectedTileColor:
+                                const Color(0xFF6366F1).withValues(alpha: 0.1),
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  const Color(0xFF6366F1).withValues(alpha: 0.2),
+                              child: const Icon(Icons.medical_services_rounded,
+                                  color: Color(0xFF6366F1), size: 18),
+                            ),
+                            title: Text(name,
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                            subtitle: Text(
+                              conv['last_message'] ?? '',
+                              style: GoogleFonts.poppins(
+                                  color: const Color(0xFF64748B), fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => _openConversation(convId, name, pUid),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.chat_bubble_outline_rounded,
+              color: Color(0xFF334155), size: 56),
+          const SizedBox(height: 16),
+          Text('Select a conversation',
+              style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
+        ],
+      ),
     );
   }
 
   Widget _buildChatPanel() {
-    final msgs = (_active!['messages'] as List?) ?? [];
     return Column(
       children: [
+        // Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: const BoxDecoration(
@@ -160,18 +346,37 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
             children: [
               const Icon(Icons.medical_services_rounded, color: Color(0xFF6366F1), size: 20),
               const SizedBox(width: 10),
-              Text(_active!['conversation_id'] as String,
-                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+              Expanded(
+                child: Text(
+                  _activePeerName ?? 'Chat',
+                  style: GoogleFonts.poppins(
+                      color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (_loadingMsgs)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                ),
             ],
           ),
         ),
+        // Messages
         Expanded(
-          child: ListView.builder(
-            controller: _scrollCtrl,
-            padding: const EdgeInsets.all(16),
-            itemCount: msgs.length,
-            itemBuilder: (_, i) => _buildBubble(msgs[i]),
-          ),
+          child: _messages.isEmpty && !_loadingMsgs
+              ? Center(
+                  child: Text('No messages yet. Say hello! 👋',
+                      style: GoogleFonts.poppins(
+                          color: const Color(0xFF64748B), fontSize: 13)),
+                )
+              : ListView.builder(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length,
+                  itemBuilder: (_, i) => _buildBubble(_messages[i]),
+                ),
         ),
         _buildInputBar(),
       ],
@@ -185,7 +390,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: const BoxConstraints(maxWidth: 340),
+        constraints: const BoxConstraints(maxWidth: 400),
         decoration: BoxDecoration(
           color: isMe ? const Color(0xFF6366F1) : const Color(0xFF1E293B),
           borderRadius: BorderRadius.only(
@@ -197,14 +402,21 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
           border: isMe ? null : Border.all(color: const Color(0xFF334155)),
         ),
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Text(msg['sender_name'] ?? (isMe ? 'Super Admin' : 'Doctor'),
-                style: GoogleFonts.poppins(
-                  color: isMe ? Colors.white70 : const Color(0xFF94A3B8), fontSize: 10)),
-            const SizedBox(height: 2),
+            if (!isMe)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(msg['sender_name'] ?? 'Staff',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600)),
+              ),
             Text(msg['content'] ?? '',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                style:
+                    GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.4)),
           ],
         ),
       ),
@@ -213,42 +425,33 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        border: Border(top: BorderSide(color: Color(0xFF334155))),
-      ),
+      padding: const EdgeInsets.all(16),
+      color: const Color(0xFF1E293B),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _msgCtrl,
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+              onSubmitted: (_) => _send(),
+              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Type a message...',
-                hintStyle: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13),
+                hintText: 'Type your message...',
+                hintStyle: GoogleFonts.poppins(
+                    color: const Color(0xFF64748B), fontSize: 13),
                 filled: true,
                 fillColor: const Color(0xFF0F172A),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
-              onSubmitted: (_) => _send(),
             ),
           ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: _send,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-            ),
+          const SizedBox(width: 12),
+          IconButton(
+            icon: const Icon(Icons.send_rounded, color: Color(0xFF6366F1)),
+            onPressed: _send,
           ),
         ],
       ),

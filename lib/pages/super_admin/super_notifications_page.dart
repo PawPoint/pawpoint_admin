@@ -40,7 +40,9 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
                     style: GoogleFonts.poppins(color: const Color(0xFF6366F1), fontSize: 13, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => setState(() { for (var n in _notifs) n.read = true; }),
+                  onPressed: () => setState(() { for (var n in _notifs) {
+                    n.read = true;
+                  } }),
                   child: Text('Mark all read', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12)),
                 ),
               ],
@@ -106,7 +108,7 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
           color: n.read ? const Color(0xFF1E293B) : const Color(0xFF1E293B).withRed(40),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: n.read ? const Color(0xFF334155) : n.color.withOpacity(0.4),
+            color: n.read ? const Color(0xFF334155) : n.color.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -114,7 +116,7 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: n.color.withOpacity(0.15),
+                color: n.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(n.icon, color: n.color, size: 20),

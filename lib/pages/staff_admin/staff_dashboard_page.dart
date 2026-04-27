@@ -148,14 +148,14 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -226,7 +226,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -234,7 +234,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withOpacity(0.12),
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.pets_rounded, color: Color(0xFFF59E0B), size: 22),
@@ -258,7 +258,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withOpacity(0.12),
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text('Pending',

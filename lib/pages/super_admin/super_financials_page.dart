@@ -199,14 +199,14 @@ class _SuperFinancialsPageState extends State<SuperFinancialsPage>
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -397,62 +397,181 @@ class _SuperFinancialsPageState extends State<SuperFinancialsPage>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+      child: InkWell(
+        onTap: () => _showTransactionDetails(tx),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF334155)),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(tx['user_name'] ?? 'Unknown',
+                        style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13)),
+                  ),
+                  Text('₱${total.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(tx['service'] ?? '',
+                      style: GoogleFonts.poppins(
+                          color: const Color(0xFF94A3B8), fontSize: 11)),
+                  if (dt != null) ...[
+                    const Text(' · ',
+                        style: TextStyle(color: Color(0xFF64748B))),
+                    Text(_fmtDate(dt),
+                        style: GoogleFonts.poppins(
+                            color: const Color(0xFF64748B), fontSize: 11)),
+                  ],
+                ],
+              ),
+              if (txId.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text('ID: $txId',
+                    style: GoogleFonts.poppins(
+                        color: const Color(0xFF475569), fontSize: 10)),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _badge(status.replaceAll('_', ' '), statusColor),
+                  const Spacer(),
+                  if (balance > 0)
+                    Text('Balance: ₱${balance.toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                            color: const Color(0xFFF59E0B), fontSize: 11)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Column(
+    );
+  }
+
+  void _showTransactionDetails(Map<String, dynamic> tx) {
+    final status = tx['paymentStatus'] ?? 'pending';
+    final balance = (tx['balanceRemaining'] as num?)?.toDouble() ?? 0.0;
+    final total = (tx['totalPrice'] as num?)?.toDouble() ?? 0.0;
+    final paid = (tx['amountPaidOnline'] as num?)?.toDouble() ?? 0.0;
+    bool isUpdating = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Transaction Detail',
+                style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _detailItem('Customer', tx['user_name'] ?? 'Unknown'),
+                  _detailItem('Pet Name', tx['pet'] ?? 'N/A'),
+                  _detailItem('Service', tx['service'] ?? 'N/A'),
+                  _detailItem('Doctor', tx['doctor'] ?? 'N/A'),
+                  _detailItem('Schedule', () {
+                    try {
+                      final dt = DateTime.parse(tx['dateTime'] as String);
+                      return '${_fmtDate(dt)} · ${_timeStr(dt)}';
+                    } catch (_) {
+                      return tx['dateTime'] ?? 'N/A';
+                    }
+                  }()),
+                  const Divider(color: Color(0xFF334155), height: 32),
+                  _detailItem('Total Price', '₱${total.toStringAsFixed(2)}', isBold: true),
+                  _detailItem('Paid Online', '₱${paid.toStringAsFixed(2)}', color: Colors.greenAccent),
+                  _detailItem('Remaining Balance', '₱${balance.toStringAsFixed(2)}',
+                      color: balance > 0 ? Colors.orangeAccent : Colors.white60),
+                  _detailItem('Status', status.replaceAll('_', ' ').toUpperCase(),
+                      color: status == 'fully_paid' ? Colors.greenAccent : Colors.orangeAccent),
+                  if (tx['transactionId'] != null) _detailItem('Ref ID', tx['transactionId']),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('CLOSE', style: GoogleFonts.poppins(color: Colors.white60)),
+              ),
+              if (status == 'partially_paid' && balance > 0)
+                ElevatedButton(
+                  onPressed: isUpdating
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          setModalState(() => isUpdating = true);
+                          try {
+                            await AdminApiService.markBalancePaid(
+                              userId: tx['user_id'],
+                              appointmentId: tx['id'],
+                            );
+                            if (!ctx.mounted) return;
+                            _loadAll(); // Refresh the list and stats
+                            Navigator.pop(ctx);
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Payment updated successfully!')),
+                            );
+                          } catch (e) {
+                            if (!ctx.mounted) return;
+                            setModalState(() => isUpdating = false);
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: isUpdating
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text('COLLECT BALANCE', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _detailItem(String label, String value, {bool isBold = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(tx['user_name'] ?? 'Unknown',
-                    style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13)),
-              ),
-              Text('₱${total.toStringAsFixed(2)}',
-                  style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15)),
-            ],
+          SizedBox(
+            width: 100,
+            child: Text('$label:', style: GoogleFonts.poppins(color: Colors.white60, fontSize: 12)),
           ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(tx['service'] ?? '',
-                  style: GoogleFonts.poppins(
-                      color: const Color(0xFF94A3B8), fontSize: 11)),
-              if (dt != null) ...[
-                const Text(' · ',
-                    style: TextStyle(color: Color(0xFF64748B))),
-                Text(_fmtDate(dt),
-                    style: GoogleFonts.poppins(
-                        color: const Color(0xFF64748B), fontSize: 11)),
-              ],
-            ],
-          ),
-          if (txId.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text('ID: $txId',
+          Expanded(
+            child: Text(value,
                 style: GoogleFonts.poppins(
-                    color: const Color(0xFF475569), fontSize: 10)),
-          ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _badge(status.replaceAll('_', ' '), statusColor),
-              const Spacer(),
-              if (balance > 0)
-                Text('Balance: ₱${balance.toStringAsFixed(2)}',
-                    style: GoogleFonts.poppins(
-                        color: const Color(0xFFF59E0B), fontSize: 11)),
-            ],
+                  color: color ?? Colors.white,
+                  fontSize: 13,
+                  fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+                )),
           ),
         ],
       ),
@@ -463,7 +582,7 @@ class _SuperFinancialsPageState extends State<SuperFinancialsPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
@@ -478,5 +597,11 @@ class _SuperFinancialsPageState extends State<SuperFinancialsPage>
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${m[d.month - 1]} ${d.day}, ${d.year}';
+  }
+
+  String _timeStr(DateTime d) {
+    final h = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
+    final ampm = d.hour >= 12 ? 'PM' : 'AM';
+    return '$h:${d.minute.toString().padLeft(2, '0')} $ampm';
   }
 }

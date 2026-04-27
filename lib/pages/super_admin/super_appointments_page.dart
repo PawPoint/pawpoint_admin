@@ -85,7 +85,7 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
                     selected: selected,
                     onSelected: (_) => setState(() => _filter = f),
                     backgroundColor: const Color(0xFF1E293B),
-                    selectedColor: const Color(0xFF6366F1).withOpacity(0.2),
+                    selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
                     labelStyle: GoogleFonts.poppins(
                       color: selected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
                       fontSize: 12,
@@ -148,7 +148,7 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.pets_rounded, color: color, size: 22),
@@ -176,7 +176,7 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(status,

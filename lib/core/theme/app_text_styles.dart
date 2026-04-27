@@ -11,7 +11,7 @@ class AppTextStyles {
 
   static TextStyle body = GoogleFonts.poppins(
     fontSize: 14,
-    color: AppColors.primary.withOpacity(0.87),
+    color: AppColors.primary.withValues(alpha: 0.87),
   );
 
   static TextStyle hint = GoogleFonts.poppins(
