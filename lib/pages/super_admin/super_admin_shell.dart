@@ -114,7 +114,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
           const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               itemCount: _navItems.length,
               itemBuilder: (_, i) => _buildNavTile(i),
             ),
@@ -126,34 +126,26 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   }
 
   Widget _buildSidebarHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 20, 8, 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.07))),
-      ),
-      child: Row(
-        children: [
-          if (_sidebarExpanded)
-            Expanded(
-              child: Image.asset(
-                'assets/images/logo1.png',
-                height: 28,
-                fit: BoxFit.contain,
+    return InkWell(
+      onTap: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+      child: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.07))),
+        ),
+        child: _sidebarExpanded
+            ? Align(
                 alignment: Alignment.centerLeft,
+                child: Image.asset(
+                  'assets/images/logo1.png',
+                  height: 28,
+                  fit: BoxFit.contain,
+                ),
+              )
+            : const Center(
+                child: Icon(Icons.pets_rounded, color: Colors.black87, size: 28),
               ),
-            )
-          else
-            const Icon(Icons.pets_rounded, color: Colors.black87, size: 28),
-          IconButton(
-            icon: Icon(
-              _sidebarExpanded ? Icons.menu_open : Icons.menu,
-              color: Colors.black54,
-              size: 20,
-            ),
-            onPressed: () =>
-                setState(() => _sidebarExpanded = !_sidebarExpanded),
-          ),
-        ],
       ),
     );
   }
@@ -161,48 +153,77 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   Widget _buildNavTile(int index) {
     final item     = _navItems[index];
     final selected = _selectedIndex == index;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
         color: selected ? Colors.black : Colors.transparent,
-      ),
-      child: ListTile(
-        dense: true,
-        leading: Icon(item.icon,
-            color: selected ? Colors.white : Colors.black54,
-            size: 22),
-        title: _sidebarExpanded
-            ? Text(item.label,
-                style: GoogleFonts.poppins(
-                    color: selected ? Colors.white : Colors.black87,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 13.5))
-            : null,
-        selected: selected,
-        onTap: () => setState(() => _selectedIndex = index),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => setState(() => _selectedIndex = index),
+          child: SizedBox(
+            height: 44,
+            child: _sidebarExpanded
+                ? Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(item.icon,
+                          color: selected ? Colors.white : Colors.black54,
+                          size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(item.label,
+                            style: GoogleFonts.poppins(
+                                color: selected ? Colors.white : Colors.black87,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                fontSize: 13.5),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  )
+                : Center(
+                    child: Icon(item.icon,
+                        color: selected ? Colors.white : Colors.black54,
+                        size: 22),
+                  ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSidebarFooter() {
     return Padding(
-      padding: const EdgeInsets.all(12),
-      child: ListTile(
-        dense: true,
-        leading: Icon(Icons.logout_rounded,
-            color: Colors.red.shade400, size: 20),
-        title: _sidebarExpanded
-            ? Text('Logout',
-                style: GoogleFonts.poppins(
-                    color: Colors.red.shade400, fontSize: 13))
-            : null,
-        onTap: _handleLogout,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.all(8),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: _handleLogout,
+          child: SizedBox(
+            height: 44,
+            child: _sidebarExpanded
+                ? Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(Icons.logout_rounded,
+                          color: Colors.red.shade400, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Logout',
+                          style: GoogleFonts.poppins(
+                              color: Colors.red.shade400, fontSize: 13)),
+                    ],
+                  )
+                : Center(
+                    child: Icon(Icons.logout_rounded,
+                        color: Colors.red.shade400, size: 20),
+                  ),
+          ),
+        ),
       ),
     );
   }

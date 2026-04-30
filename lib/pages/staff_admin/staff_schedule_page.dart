@@ -14,6 +14,7 @@ class StaffSchedulePage extends StatefulWidget {
 class _StaffSchedulePageState extends State<StaffSchedulePage> {
   List<dynamic> _allAppointments = [];
   bool _loading = true;
+  bool _showAll = false; 
   DateTime _focusedMonth = DateTime.now();
   DateTime? _selectedDay;
   String _doctorName = '';
@@ -59,7 +60,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
 
   // Filter appointments for the selected doctor
   List<dynamic> get _myAppointments {
-    if (_doctorName.isEmpty) return _allAppointments;
+    if (_showAll || _doctorName.isEmpty) return _allAppointments;
     return _allAppointments.where((a) {
       final doctor = (a['doctor'] ?? '').toString().toLowerCase();
       return doctor.contains(_doctorName.toLowerCase()) ||
@@ -122,29 +123,48 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       color: const Color(0xFFF8FAFF),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('My Schedule',
-                    style: GoogleFonts.poppins(
-                        color: const Color(0xFF1E293B),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20)),
-                if (_doctorName.isNotEmpty)
-                  Text('Showing appointments for: $_doctorName',
-                      style: GoogleFonts.poppins(
-                          color: const Color(0xFF10B981),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500)),
-              ],
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('My Schedule',
+                        style: GoogleFonts.poppins(
+                            color: const Color(0xFF1E293B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20)),
+                    if (_doctorName.isNotEmpty)
+                      Text('Assigned to: $_doctorName',
+                          style: GoogleFonts.poppins(
+                              color: const Color(0xFF10B981),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
+                onPressed: _load,
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
-            onPressed: _load,
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _showAll ? 'Showing ALL Clinic Appointments' : 'Showing ONLY My Appointments',
+                style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w500),
+              ),
+              Switch.adaptive(
+                value: _showAll,
+                activeColor: const Color(0xFF10B981),
+                onChanged: (val) => setState(() => _showAll = val),
+              ),
+            ],
           ),
         ],
       ),

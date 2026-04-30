@@ -99,12 +99,16 @@ class AdminApiService {
     String userId,
     String appointmentId, {
     required String proposedDatetime,
+    String assignedDoctor = '',
   }) async {
     final res = await http.put(
       Uri.parse(
           '$_base/api/admin/appointments/$userId/$appointmentId/propose-reschedule'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'proposed_datetime': proposedDatetime}),
+      body: jsonEncode({
+        'proposed_datetime': proposedDatetime,
+        'assigned_doctor': assignedDoctor,
+      }),
     );
     if (res.statusCode != 200) {
       final detail =

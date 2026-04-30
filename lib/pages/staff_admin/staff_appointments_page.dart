@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/admin_api_service.dart';
 
 class StaffAppointmentsPage extends StatefulWidget {
@@ -16,11 +18,31 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
   List<dynamic> _completed = [];
   List<dynamic> _rejected = [];
   bool _loading = true;
+  String? _doctorName;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
+    _loadNameThenData();
+  }
+
+  Future<void> _loadNameThenData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('admins')
+            .doc(uid)
+            .get();
+        if (doc.exists && mounted) {
+          setState(() {
+            _doctorName =
+                (doc.data() as Map<String, dynamic>)['name'] ?? '';
+          });
+        }
+      } catch (_) {}
+    }
     _load();
   }
 
@@ -275,6 +297,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
           appt['user_id'] as String,
           appt['id'] as String,
           proposedDatetime: newDt.toIso8601String(),
+          assignedDoctor: _doctorName ?? '',
         );
         _showSnack('Reschedule proposal sent ✓', const Color(0xFF6366F1));
         _load();
