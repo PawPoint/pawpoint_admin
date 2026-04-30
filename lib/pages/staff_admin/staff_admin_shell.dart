@@ -40,7 +40,7 @@ class _StaffAdminShellState extends State<StaffAdminShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: _pages[_index],
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -52,7 +52,7 @@ class _StaffAdminShellState extends State<StaffAdminShell> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, -4))
         ],
@@ -75,7 +75,7 @@ class _StaffAdminShellState extends State<StaffAdminShell> {
                       horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFF10B981).withOpacity(0.12)
+                        ? Colors.black.withValues(alpha: 0.08)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -83,9 +83,7 @@ class _StaffAdminShellState extends State<StaffAdminShell> {
                     children: [
                       Icon(
                         selected ? item.filled : item.outline,
-                        color: selected
-                            ? const Color(0xFF10B981)
-                            : Colors.grey,
+                        color: selected ? Colors.black : Colors.black38,
                         size: 24,
                       ),
                       if (selected) ...[
@@ -93,7 +91,7 @@ class _StaffAdminShellState extends State<StaffAdminShell> {
                         Text(
                           item.label,
                           style: GoogleFonts.poppins(
-                            color: const Color(0xFF10B981),
+                            color: Colors.black,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),

@@ -120,7 +120,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [roleColor, roleColor.withOpacity(0.7)],
+          colors: [roleColor, roleColor.withValues(alpha: 0.7)],
         ),
         borderRadius:
             const BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -174,7 +174,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 4))
           ],
@@ -206,7 +206,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -246,17 +246,13 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 4))
           ],
         ),
         child: Column(
           children: [
-            _actionRow(
-                Icons.help_outline_rounded, 'Help & Support',
-                const Color(0xFF6366F1), () {}),
-            _divider(),
             _actionRow(
                 Icons.logout_rounded, 'Logout',
                 const Color(0xFFEF4444), _handleLogout),
@@ -278,7 +274,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 18),

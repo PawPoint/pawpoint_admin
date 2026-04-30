@@ -81,7 +81,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -104,9 +104,9 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       width: _sidebarExpanded ? 240 : 70,
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        border: Border(right: BorderSide(color: Color(0xFF334155), width: 1)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(right: BorderSide(color: Colors.black.withValues(alpha: 0.08), width: 1)),
       ),
       child: Column(
         children: [
@@ -114,7 +114,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
           const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               itemCount: _navItems.length,
               itemBuilder: (_, i) => _buildNavTile(i),
             ),
@@ -126,47 +126,26 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   }
 
   Widget _buildSidebarHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Row(
-        children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.pets, color: Colors.white, size: 20),
-          ),
-          if (_sidebarExpanded) ...[
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PawPoint',
-                      style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15)),
-                  Text('Super Admin',
-                      style: GoogleFonts.poppins(
-                          color: const Color(0xFF94A3B8), fontSize: 11)),
-                ],
+    return InkWell(
+      onTap: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+      child: Container(
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.07))),
+        ),
+        child: _sidebarExpanded
+            ? Align(
+                alignment: Alignment.centerLeft,
+                child: Image.asset(
+                  'assets/images/logo1.png',
+                  height: 28,
+                  fit: BoxFit.contain,
+                ),
+              )
+            : const Center(
+                child: Icon(Icons.pets_rounded, color: Colors.black87, size: 28),
               ),
-            ),
-          ],
-          IconButton(
-            icon: Icon(
-              _sidebarExpanded ? Icons.menu_open : Icons.menu,
-              color: const Color(0xFF94A3B8),
-              size: 20,
-            ),
-            onPressed: () =>
-                setState(() => _sidebarExpanded = !_sidebarExpanded),
-          ),
-        ],
       ),
     );
   }
@@ -174,52 +153,77 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   Widget _buildNavTile(int index) {
     final item     = _navItems[index];
     final selected = _selectedIndex == index;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: selected ? Colors.black : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
-        color: selected
-            ? const Color(0xFF6366F1).withOpacity(0.15)
-            : Colors.transparent,
-      ),
-      child: ListTile(
-        dense: true,
-        leading: Icon(item.icon,
-            color: selected
-                ? const Color(0xFF6366F1)
-                : const Color(0xFF64748B),
-            size: 22),
-        title: _sidebarExpanded
-            ? Text(item.label,
-                style: GoogleFonts.poppins(
-                    color: selected ? Colors.white : const Color(0xFF94A3B8),
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 13.5))
-            : null,
-        selected: selected,
-        onTap: () => setState(() => _selectedIndex = index),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => setState(() => _selectedIndex = index),
+          child: SizedBox(
+            height: 44,
+            child: _sidebarExpanded
+                ? Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(item.icon,
+                          color: selected ? Colors.white : Colors.black54,
+                          size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(item.label,
+                            style: GoogleFonts.poppins(
+                                color: selected ? Colors.white : Colors.black87,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                fontSize: 13.5),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  )
+                : Center(
+                    child: Icon(item.icon,
+                        color: selected ? Colors.white : Colors.black54,
+                        size: 22),
+                  ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSidebarFooter() {
     return Padding(
-      padding: const EdgeInsets.all(12),
-      child: ListTile(
-        dense: true,
-        leading: const Icon(Icons.logout_rounded,
-            color: Color(0xFFEF4444), size: 20),
-        title: _sidebarExpanded
-            ? Text('Logout',
-                style: GoogleFonts.poppins(
-                    color: const Color(0xFFEF4444), fontSize: 13))
-            : null,
-        onTap: _handleLogout,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.all(8),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: _handleLogout,
+          child: SizedBox(
+            height: 44,
+            child: _sidebarExpanded
+                ? Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(Icons.logout_rounded,
+                          color: Colors.red.shade400, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Logout',
+                          style: GoogleFonts.poppins(
+                              color: Colors.red.shade400, fontSize: 13)),
+                    ],
+                  )
+                : Center(
+                    child: Icon(Icons.logout_rounded,
+                        color: Colors.red.shade400, size: 20),
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -229,49 +233,45 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        border:
-            Border(bottom: BorderSide(color: Color(0xFF334155), width: 1)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08))),
       ),
       child: Row(
         children: [
           if (isMobile)
             Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
+                icon: const Icon(Icons.menu, color: Colors.black87),
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
           Text(
             _navItems[_selectedIndex].label,
             style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+                fontWeight: FontWeight.w700,
                 fontSize: 18),
           ),
           const Spacer(),
-          // Admin name chip
           if (!isMobile)
             Container(
               margin: const EdgeInsets.only(right: 12),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.12),
+                color: const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: const Color(0xFF6366F1).withOpacity(0.3)),
+                border: Border.all(color: Colors.black12),
               ),
               child: Text(_adminName,
                   style: GoogleFonts.poppins(
-                      color: const Color(0xFF6366F1),
+                      color: Colors.black87,
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ),
           CircleAvatar(
             radius: 18,
-            backgroundColor: const Color(0xFF6366F1),
+            backgroundColor: Colors.black,
             child: Text(_adminInitials,
                 style: GoogleFonts.poppins(
                     color: Colors.white,
@@ -286,7 +286,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   // ── Mobile Drawer ──────────────────────────────────────────────────────
   Drawer _buildDrawer() {
     return Drawer(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: Colors.white,
       child: Column(
         children: [
           const SizedBox(height: 50),

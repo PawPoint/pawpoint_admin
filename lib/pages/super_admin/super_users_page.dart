@@ -155,7 +155,7 @@ class _SuperUsersPageState extends State<SuperUsersPage> {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: roleColor.withOpacity(0.2),
+                backgroundColor: roleColor.withValues(alpha: 0.2),
                 backgroundImage: user['photoUrl'] != null && (user['photoUrl'] as String).isNotEmpty
                     ? NetworkImage(user['photoUrl'])
                     : null,
@@ -178,7 +178,7 @@ class _SuperUsersPageState extends State<SuperUsersPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: roleColor.withOpacity(0.15),
+                        color: roleColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(role,

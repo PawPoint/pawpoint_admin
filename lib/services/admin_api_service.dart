@@ -39,6 +39,26 @@ class AdminApiService {
     throw Exception('Failed to load approved appointments');
   }
 
+  // ─────────────────────────── Completed Appointments ──────────────────────
+  static Future<List<dynamic>> fetchCompletedAppointments() async {
+    final res = await http.get(
+        Uri.parse('$_base/api/admin/appointments/completed'));
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body)['appointments'];
+    }
+    throw Exception('Failed to load completed appointments');
+  }
+
+  // ─────────────────────────── Rejected Appointments ───────────────────────
+  static Future<List<dynamic>> fetchRejectedAppointments() async {
+    final res = await http.get(
+        Uri.parse('$_base/api/admin/appointments/rejected'));
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body)['appointments'];
+    }
+    throw Exception('Failed to load rejected appointments');
+  }
+
   // ─────────────────────────── Approve ─────────────────────────────────────
   static Future<void> approveAppointment(
     String userId,
@@ -72,6 +92,29 @@ class AdminApiService {
       body: jsonEncode({'status': 'rejected', 'doctor_note': doctorNote}),
     );
     if (res.statusCode != 200) throw Exception('Failed to reject');
+  }
+
+  // ─────────────────────────── Propose Reschedule ───────────────────────────
+  static Future<void> proposeReschedule(
+    String userId,
+    String appointmentId, {
+    required String proposedDatetime,
+    String assignedDoctor = '',
+  }) async {
+    final res = await http.put(
+      Uri.parse(
+          '$_base/api/admin/appointments/$userId/$appointmentId/propose-reschedule'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'proposed_datetime': proposedDatetime,
+        'assigned_doctor': assignedDoctor,
+      }),
+    );
+    if (res.statusCode != 200) {
+      final detail =
+          jsonDecode(res.body)['detail'] ?? 'Failed to propose reschedule';
+      throw Exception(detail);
+    }
   }
 
   // ─────────────────────────── Complete ────────────────────────────────────

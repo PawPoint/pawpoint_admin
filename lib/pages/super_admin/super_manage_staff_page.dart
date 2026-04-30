@@ -285,7 +285,7 @@ class _SuperManageStaffPageState extends State<SuperManageStaffPage> {
           // Avatar
           CircleAvatar(
             radius: 28,
-            backgroundColor: roleColor.withOpacity(0.15),
+            backgroundColor: roleColor.withValues(alpha: 0.15),
             backgroundImage: s['photoUrl'] != null &&
                     (s['photoUrl'] as String).isNotEmpty
                 ? NetworkImage(s['photoUrl'])
@@ -336,7 +336,7 @@ class _SuperManageStaffPageState extends State<SuperManageStaffPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: roleColor.withOpacity(0.12),
+              color: roleColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(roleLabel,

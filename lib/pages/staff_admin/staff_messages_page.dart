@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,208 +12,402 @@ class StaffMessagesPage extends StatefulWidget {
 }
 
 class _StaffMessagesPageState extends State<StaffMessagesPage> {
-  // Super Admin UID — hardcoded as the primary contact
-  static const String _superAdminUid = 'JqvuhfEo8baJblJEl8qW1smm3KC3';
-  static const String _superAdminName = 'Super Admin';
+  // ── State ──────────────────────────────────────────────────────────────────
+  String? _activeConvId;
+  String? _activePeerName;
+  String? _activePeerUid;
 
+  List<Map<String, dynamic>> _conversations = [];
   List<Map<String, dynamic>> _messages = [];
-  bool _loading = true;
+  List<Map<String, dynamic>> _staff = [];
+
+  bool _loadingConvs = true;
+  bool _loadingMsgs = false;
+
   final TextEditingController _msgCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
 
+  Timer? _convTimer;
+  Timer? _msgTimer;
+
   String get _myUid => FirebaseAuth.instance.currentUser?.uid ?? '';
   String get _myName =>
-      FirebaseAuth.instance.currentUser?.displayName ?? 'Doctor';
+      FirebaseAuth.instance.currentUser?.displayName ?? 'Staff Admin';
 
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadConversations();
+    _loadStaff();
+    // Poll conversations every 5 seconds
+    _convTimer = Timer.periodic(const Duration(seconds: 5), (_) => _loadConversations());
   }
 
   @override
   void dispose() {
+    _convTimer?.cancel();
+    _msgTimer?.cancel();
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  // ── Data loading ───────────────────────────────────────────────────────────
+  Future<void> _loadStaff() async {
+    try {
+      final staff = await AdminApiService.fetchStaff();
+      if (mounted) setState(() => _staff = List<Map<String, dynamic>>.from(staff));
+    } catch (_) {}
+  }
+
+  Future<void> _loadConversations() async {
+    if (_myUid.isEmpty) return;
     try {
       final convs = await AdminApiService.fetchConversations(_myUid);
-      // Find the conversation with super admin
-      List<Map<String, dynamic>> msgs = [];
-      for (final conv in convs) {
-        final id = conv['conversation_id'] as String;
-        if (id.contains(_superAdminUid)) {
-          msgs = List<Map<String, dynamic>>.from(conv['messages'] ?? []);
-          break;
-        }
+      if (mounted) {
+        setState(() {
+          _conversations = List<Map<String, dynamic>>.from(convs);
+          _loadingConvs = false;
+        });
       }
-      if (mounted) setState(() { _messages = msgs; _loading = false; });
-      _scrollToBottom();
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _loadingConvs = false);
     }
   }
 
+  Future<void> _loadMessages(String convId) async {
+    if (mounted) setState(() => _loadingMsgs = true);
+    try {
+      final convs = await AdminApiService.fetchConversations(_myUid);
+      final match = convs.cast<Map<String, dynamic>>()
+          .where((c) => c['conversation_id'] == convId)
+          .toList();
+      final msgs = match.isNotEmpty
+          ? List<Map<String, dynamic>>.from(match.first['messages'] ?? [])
+          : <Map<String, dynamic>>[];
+      if (mounted) {
+        setState(() {
+          _messages = msgs;
+          _loadingMsgs = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMsgs = false);
+    }
+  }
+
+  void _openConversation(String convId, String peerName, String peerUid) {
+    _msgTimer?.cancel();
+    setState(() {
+      _activeConvId = convId;
+      _activePeerName = peerName;
+      _activePeerUid = peerUid;
+      _messages = [];
+    });
+    _loadMessages(convId);
+    // Poll messages every 3 seconds while this chat is open
+    _msgTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (_activeConvId == convId) _loadMessages(convId);
+    });
+  }
+
+  void _scrollToBottom() {
+    if (_scrollCtrl.hasClients) {
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  // ── Send ───────────────────────────────────────────────────────────────────
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
-    if (text.isEmpty) return;
+    if (_activePeerUid == null || text.isEmpty) return;
     _msgCtrl.clear();
     try {
       await AdminApiService.sendMessage(
         senderId: _myUid,
-        receiverId: _superAdminUid,
+        receiverId: _activePeerUid!,
         content: text,
         senderName: _myName,
         senderRole: 'staff_admin',
       );
-      _load();
-    } catch (_) {}
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+      // Refresh messages immediately after sending
+      if (_activeConvId != null) await _loadMessages(_activeConvId!);
+      await _loadConversations();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send message')),
         );
       }
-    });
+    }
   }
 
+  // ── Start New Chat ─────────────────────────────────────────────────────────
+  void _startNewChat() {
+    if (_staff.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loading contacts...')),
+      );
+      _loadStaff();
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Start Conversation',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: _staff.where((m) => m['uid'] != _myUid).isEmpty
+              ? Center(
+                  child: Text('No other staff available',
+                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+                )
+              : ListView(
+                  children: _staff
+                      .where((m) => m['uid'] != _myUid)
+                      .map((member) {
+                    final uid = member['uid'] as String? ?? '';
+                    final name = member['name'] as String? ?? 'Staff';
+                    final role = member['role'] as String? ?? '';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                        child: const Icon(Icons.person_rounded, color: Color(0xFF6366F1), size: 18),
+                      ),
+                      title: Text(name,
+                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                      subtitle: Text(role,
+                          style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
+                      onTap: () {
+                        final convId = ([_myUid, uid]..sort()).join('__');
+                        Navigator.pop(ctx);
+                        _openConversation(convId, name, uid);
+                      },
+                    );
+                  }).toList(),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helper: resolve peer name from conversation ────────────────────────────
+  String _peerName(Map<String, dynamic> conv) {
+    final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
+    final peerUid = participants.firstWhere((p) => p != _myUid, orElse: () => '');
+    if (peerUid.isEmpty) return 'Unknown';
+    final staffMatch = _staff.where((s) => s['uid'] == peerUid).toList();
+    if (staffMatch.isNotEmpty) return staffMatch.first['name'] as String? ?? peerUid;
+    return peerUid;
+  }
+
+  String _peerUid(Map<String, dynamic> conv) {
+    final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
+    return participants.firstWhere((p) => p != _myUid, orElse: () => '');
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
-                : _messages.isEmpty
-                    ? _buildEmpty()
-                    : _buildMessages(),
-          ),
-          _buildInputBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
+      color: const Color(0xFF0F172A),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 22,
-            backgroundColor: Color(0xFF6366F1),
-            child: Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_superAdminName,
-                  style: GoogleFonts.poppins(
-                      color: const Color(0xFF1E293B), fontWeight: FontWeight.w700, fontSize: 15)),
-              Row(
-                children: [
-                  Container(
-                    width: 7, height: 7,
-                    decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 5),
-                  Text('Online', style: GoogleFonts.poppins(color: const Color(0xFF10B981), fontSize: 11)),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
-            onPressed: _load,
+          _buildSidebar(),
+          Expanded(
+            child: _activeConvId == null ? _buildEmptyState() : _buildChatPanel(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildSidebar() {
+    return Container(
+      width: 280,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E293B),
+        border: Border(right: BorderSide(color: Color(0xFF334155))),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Messages',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                IconButton(
+                  icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF6366F1)),
+                  tooltip: 'New Chat',
+                  onPressed: _startNewChat,
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loadingConvs
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                : _conversations.isEmpty
+                    ? Center(
+                        child: Text('No conversations yet',
+                            style: GoogleFonts.poppins(
+                                color: const Color(0xFF64748B), fontSize: 13)),
+                      )
+                    : ListView.builder(
+                        itemCount: _conversations.length,
+                        itemBuilder: (_, i) {
+                          final conv = _conversations[i];
+                          final convId = conv['conversation_id'] as String? ?? '';
+                          final isActive = _activeConvId == convId;
+                          final name = _peerName(conv);
+                          final pUid = _peerUid(conv);
+                          return ListTile(
+                            selected: isActive,
+                            selectedTileColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  const Color(0xFF6366F1).withValues(alpha: 0.2),
+                              child: const Icon(Icons.person_rounded,
+                                  color: Color(0xFF6366F1), size: 18),
+                            ),
+                            title: Text(name,
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                            subtitle: Text(
+                              conv['last_message'] ?? '',
+                              style: GoogleFonts.poppins(
+                                  color: const Color(0xFF64748B), fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => _openConversation(convId, name, pUid),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFFE2E8F0), size: 64),
+          const Icon(Icons.chat_bubble_outline_rounded,
+              color: Color(0xFF334155), size: 56),
           const SizedBox(height: 16),
-          Text('No messages yet', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 15)),
-          Text('Send a message to Super Admin',
-              style: GoogleFonts.poppins(color: const Color(0xFFCBD5E1), fontSize: 12)),
+          Text('Select a contact to start chatting',
+              style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
         ],
       ),
     );
   }
 
-  Widget _buildMessages() {
-    return ListView.builder(
-      controller: _scrollCtrl,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      itemCount: _messages.length,
-      itemBuilder: (_, i) => _buildBubble(_messages[i]),
+  Widget _buildChatPanel() {
+    return Column(
+      children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E293B),
+            border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.person_outline_rounded, color: Color(0xFF6366F1), size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _activePeerName ?? 'Chat',
+                  style: GoogleFonts.poppins(
+                      color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (_loadingMsgs)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                ),
+            ],
+          ),
+        ),
+        // Messages
+        Expanded(
+          child: _messages.isEmpty && !_loadingMsgs
+              ? Center(
+                  child: Text('No messages yet. Say hello! 👋',
+                      style:
+                          GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13)),
+                )
+              : ListView.builder(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length,
+                  itemBuilder: (_, i) => _buildBubble(_messages[i]),
+                ),
+        ),
+        _buildInputBar(),
+      ],
     );
   }
 
   Widget _buildBubble(Map<String, dynamic> msg) {
     final isMe = msg['sender_id'] == _myUid;
-    final time = (msg['timestamp'] as String? ?? '').length >= 16
-        ? msg['timestamp'].substring(11, 16)
-        : '';
-
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: const BoxConstraints(maxWidth: 400),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xFF6366F1) : const Color(0xFF1E293B),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 16),
+          ),
+          border: isMe ? null : Border.all(color: const Color(0xFF334155)),
+        ),
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: isMe
-                    ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
-                    : null,
-                color: isMe ? null : Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isMe ? 18 : 4),
-                  bottomRight: Radius.circular(isMe ? 4 : 18),
-                ),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2))
-                ],
+            if (!isMe)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(msg['sender_name'] ?? 'Admin',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
               ),
-              child: Text(
-                msg['content'] ?? '',
-                style: GoogleFonts.poppins(
-                  color: isMe ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 13.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(time,
-                style: GoogleFonts.poppins(color: const Color(0xFFCBD5E1), fontSize: 10)),
+            Text(msg['content'] ?? '',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.4)),
           ],
         ),
       ),
@@ -221,46 +416,30 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, -2))],
-      ),
+      padding: const EdgeInsets.all(16),
+      color: const Color(0xFF1E293B),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFF),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: TextField(
-                controller: _msgCtrl,
-                style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Message Super Admin...',
-                  hintStyle: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
+            child: TextField(
+              controller: _msgCtrl,
+              onSubmitted: (_) => _send(),
+              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Type your message...',
+                hintStyle: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFF0F172A),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: _send,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: const Color(0xFF10B981).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
-              ),
-              child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-            ),
+          const SizedBox(width: 12),
+          IconButton(
+            icon: const Icon(Icons.send_rounded, color: Color(0xFF6366F1)),
+            onPressed: _send,
           ),
         ],
       ),
