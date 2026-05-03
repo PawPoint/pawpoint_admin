@@ -38,13 +38,13 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Column(
         children: [
           _buildHeader(),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
                 : _filtered.isEmpty
                     ? _buildEmpty()
                     : _buildList(),
@@ -57,17 +57,17 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Text('Approved Appointments',
-                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+                  style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 16)),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF94A3B8)),
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
                 onPressed: _load,
               ),
             ],
@@ -84,16 +84,16 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
                     label: Text(f[0].toUpperCase() + f.substring(1)),
                     selected: selected,
                     onSelected: (_) => setState(() => _filter = f),
-                    backgroundColor: const Color(0xFF1E293B),
-                    selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                    backgroundColor: const Color(0xFFF8FAFF),
+                    selectedColor: const Color(0xFF10B981).withValues(alpha: 0.1),
                     labelStyle: GoogleFonts.poppins(
-                      color: selected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
+                      color: selected ? const Color(0xFF10B981) : const Color(0xFF64748B),
                       fontSize: 12,
                     ),
                     side: BorderSide(
-                      color: selected ? const Color(0xFF6366F1) : const Color(0xFF334155),
+                      color: selected ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
                     ),
-                    checkmarkColor: const Color(0xFF6366F1),
+                    checkmarkColor: const Color(0xFF10B981),
                   ),
                 );
               }).toList(),
@@ -110,7 +110,7 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.event_busy_rounded, color: Color(0xFF334155), size: 56),
+          const Icon(Icons.event_busy_rounded, color: Color(0xFFE2E8F0), size: 56),
           const SizedBox(height: 16),
           Text('No appointments found',
               style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
@@ -138,9 +138,9 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
@@ -148,7 +148,7 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.pets_rounded, color: color, size: 22),
@@ -159,24 +159,24 @@ class _SuperAppointmentsPageState extends State<SuperAppointmentsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(appt['service'] ?? 'Service',
-                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                    style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 14)),
                 Text('Pet: ${appt['pet'] ?? '-'}  •  Dr. ${appt['doctor'] ?? '-'}',
-                    style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12)),
+                    style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 12)),
                 if (dt != null)
                   Text(
                     '${_weekday(dt.weekday)}, ${_month(dt.month)} ${dt.day}, ${dt.year}  ${_time(dt)}',
-                    style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11),
+                    style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11),
                   ),
                 if (appt['user_name'] != null)
                   Text('Owner: ${appt['user_name']}',
-                      style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11)),
+                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(status,

@@ -64,8 +64,8 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
   Future<void> _loadConversations() async {
     if (_myUid.isEmpty) return;
     try {
-      // Super admin fetches ALL conversations
-      final convs = await AdminApiService.fetchAllConversations();
+      // Only fetch conversations that involve the current super admin
+      final convs = await AdminApiService.fetchConversations(_myUid);
       if (mounted) {
         setState(() {
           _conversations = List<Map<String, dynamic>>.from(convs);
@@ -80,7 +80,8 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
   Future<void> _loadMessages(String convId) async {
     if (mounted) setState(() => _loadingMsgs = true);
     try {
-      final convs = await AdminApiService.fetchAllConversations();
+      // Fetch only conversations that include the current super admin
+      final convs = await AdminApiService.fetchConversations(_myUid);
       final match = convs.cast<Map<String, dynamic>>()
           .where((c) => c['conversation_id'] == convId)
           .toList();
@@ -135,6 +136,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
         receiverId: _activePeerUid!,
         content: text,
         senderName: _myName,
+        receiverName: _activePeerName ?? '',
         senderRole: 'super_admin',
       );
       if (_activeConvId != null) await _loadMessages(_activeConvId!);
@@ -160,17 +162,17 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('New Message',
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600)),
         content: SizedBox(
           width: 400,
           height: 300,
           child: _staff.where((m) => m['uid'] != _myUid).isEmpty
               ? Center(
                   child: Text('No staff available',
-                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+                      style: GoogleFonts.poppins(color: const Color(0xFF64748B))),
                 )
               : ListView(
                   children: _staff
@@ -181,16 +183,16 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
                     final role = member['role'] as String? ?? '';
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                        backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
                         child: const Icon(Icons.medical_services_rounded,
-                            color: Color(0xFF6366F1), size: 18),
+                            color: Color(0xFF10B981), size: 18),
                       ),
                       title: Text(name,
                           style: GoogleFonts.poppins(
-                              color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                              color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500)),
                       subtitle: Text(role,
                           style: GoogleFonts.poppins(
-                              color: const Color(0xFF94A3B8), fontSize: 11)),
+                              color: const Color(0xFF64748B), fontSize: 11)),
                       onTap: () {
                         final convId = ([_myUid, uid]..sort()).join('__');
                         Navigator.pop(ctx);
@@ -203,7 +205,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF64748B))),
           ),
         ],
       ),
@@ -215,8 +217,14 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
     final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
     final peerUid = participants.firstWhere((p) => p != _myUid, orElse: () => '');
     if (peerUid.isEmpty) return 'Unknown';
+    // 1. Try the loaded staff list first (most reliable)
     final match = _staff.where((s) => s['uid'] == peerUid).toList();
     if (match.isNotEmpty) return match.first['name'] as String? ?? peerUid;
+    // 2. Fall back to participant_names stored in the conversation doc
+    final names = conv['participant_names'] as Map<String, dynamic>?;
+    if (names != null && names[peerUid] != null && (names[peerUid] as String).isNotEmpty) {
+      return names[peerUid] as String;
+    }
     return peerUid;
   }
 
@@ -229,7 +237,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Row(
         children: [
           _buildSidebar(),
@@ -245,8 +253,8 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
     return Container(
       width: 280,
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        border: Border(right: BorderSide(color: Color(0xFF334155))),
+        color: Color(0xFFF8FAFF),
+        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
@@ -257,9 +265,9 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
               children: [
                 Text('Conversations',
                     style: GoogleFonts.poppins(
-                        color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                        color: const Color(0xFF1E293B), fontWeight: FontWeight.w700, fontSize: 15)),
                 IconButton(
-                  icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF6366F1)),
+                  icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF10B981)),
                   tooltip: 'New Chat',
                   onPressed: _startNewChat,
                 ),
@@ -268,7 +276,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
           ),
           Expanded(
             child: _loadingConvs
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
                 : _conversations.isEmpty
                     ? Center(
                         child: Text('No conversations yet',
@@ -286,16 +294,16 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
                           return ListTile(
                             selected: isActive,
                             selectedTileColor:
-                                const Color(0xFF6366F1).withValues(alpha: 0.1),
+                                const Color(0xFF10B981).withValues(alpha: 0.1),
                             leading: CircleAvatar(
                               backgroundColor:
-                                  const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                  const Color(0xFF10B981).withValues(alpha: 0.1),
                               child: const Icon(Icons.medical_services_rounded,
-                                  color: Color(0xFF6366F1), size: 18),
+                                  color: Color(0xFF10B981), size: 18),
                             ),
                             title: Text(name,
                                 style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: const Color(0xFF1E293B),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500),
                                 maxLines: 1,
@@ -323,7 +331,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.chat_bubble_outline_rounded,
-              color: Color(0xFF334155), size: 56),
+              color: Color(0xFFE2E8F0), size: 56),
           const SizedBox(height: 16),
           Text('Select a conversation',
               style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
@@ -339,18 +347,18 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
-            border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
           ),
           child: Row(
             children: [
-              const Icon(Icons.medical_services_rounded, color: Color(0xFF6366F1), size: 20),
+              const Icon(Icons.medical_services_rounded, color: Color(0xFF10B981), size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _activePeerName ?? 'Chat',
                   style: GoogleFonts.poppins(
-                      color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                      color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -358,7 +366,7 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
                 const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF6366F1)),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
                 ),
             ],
           ),
@@ -392,14 +400,14 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: const BoxConstraints(maxWidth: 400),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF6366F1) : const Color(0xFF1E293B),
+          color: isMe ? const Color(0xFF10B981) : const Color(0xFFF8FAFF),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(isMe ? 16 : 4),
             bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
-          border: isMe ? null : Border.all(color: const Color(0xFF334155)),
+          border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
           crossAxisAlignment:
@@ -410,13 +418,15 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(msg['sender_name'] ?? 'Staff',
                     style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: const Color(0xFF10B981),
                         fontSize: 10,
                         fontWeight: FontWeight.w600)),
               ),
             Text(msg['content'] ?? '',
-                style:
-                    GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.4)),
+                style: GoogleFonts.poppins(
+                    color: isMe ? Colors.white : const Color(0xFF1E293B),
+                    fontSize: 13,
+                    height: 1.4)),
           ],
         ),
       ),
@@ -426,31 +436,37 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
   Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFF1E293B),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _msgCtrl,
               onSubmitted: (_) => _send(),
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Type your message...',
                 hintStyle: GoogleFonts.poppins(
                     color: const Color(0xFF64748B), fontSize: 13),
                 filled: true,
-                fillColor: const Color(0xFF0F172A),
+                fillColor: const Color(0xFFF8FAFF),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
               ),
             ),
           ),
           const SizedBox(width: 12),
           IconButton(
-            icon: const Icon(Icons.send_rounded, color: Color(0xFF6366F1)),
+            icon: const Icon(Icons.send_rounded, color: Color(0xFF10B981)),
             onPressed: _send,
           ),
         ],

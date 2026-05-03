@@ -5,6 +5,7 @@ import 'package:pawpoint_admin/pages/login_page.dart';
 import 'package:pawpoint_admin/pages/splash_screen.dart';
 import 'package:pawpoint_admin/pages/superadmin_dashboard.dart';
 import 'package:pawpoint_admin/pages/staffadmin_dashboard.dart';
+import 'package:pawpoint_admin/pages/verify_email_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,10 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const AdminLoginPage(),
         '/super_admin': (context) => const SuperAdminDashboard(),
         '/staff_admin': (context) => const StaffAdminDashboard(),
+        '/verify-email': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return VerifyAdminEmailPage(role: args['role']);
+        },
       },
     );
   }

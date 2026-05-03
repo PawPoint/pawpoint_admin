@@ -29,7 +29,7 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
             : _notifs;
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Column(
         children: [
           Padding(
@@ -37,7 +37,7 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
             child: Row(
               children: [
                 Text('${_notifs.where((n) => !n.read).length} unread',
-                    style: GoogleFonts.poppins(color: const Color(0xFF6366F1), fontSize: 13, fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.poppins(color: const Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 TextButton(
                   onPressed: () => setState(() { for (var n in _notifs) {
@@ -62,15 +62,15 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: sel ? const Color(0xFF6366F1) : const Color(0xFF1E293B),
+                        color: sel ? const Color(0xFF10B981) : const Color(0xFFF8FAFF),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: sel ? const Color(0xFF6366F1) : const Color(0xFF334155),
+                          color: sel ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
                         ),
                       ),
                       child: Text(f[0].toUpperCase() + f.substring(1),
                           style: GoogleFonts.poppins(
-                            color: sel ? Colors.white : const Color(0xFF94A3B8),
+                            color: sel ? Colors.white : const Color(0xFF64748B),
                             fontSize: 12,
                             fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                           )),
@@ -105,18 +105,25 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: n.read ? const Color(0xFF1E293B) : const Color(0xFF1E293B).withRed(40),
+          color: n.read ? const Color(0xFFF8FAFF) : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: n.read ? const Color(0xFF334155) : n.color.withValues(alpha: 0.4),
+            color: n.read ? const Color(0xFFE2E8F0) : n.color.withValues(alpha: 0.3),
           ),
+          boxShadow: n.read ? [] : [
+            BoxShadow(
+              color: n.color.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: n.color.withValues(alpha: 0.15),
+                color: n.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(n.icon, color: n.color, size: 20),
@@ -128,13 +135,13 @@ class _SuperNotificationsPageState extends State<SuperNotificationsPage> {
                 children: [
                   Text(n.title,
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: const Color(0xFF1E293B),
                         fontWeight: n.read ? FontWeight.w400 : FontWeight.w600,
                         fontSize: 13,
                       )),
                   const SizedBox(height: 2),
                   Text(n.body,
-                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
+                      style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11)),
                 ],
               ),
             ),

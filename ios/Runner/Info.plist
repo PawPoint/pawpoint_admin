@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>PawPoint Admin needs access to your camera to take staff profile photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PawPoint Admin needs access to your photo library to choose staff profile photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PawPoint Admin needs access to your microphone (required for some camera functions).</string>
 </dict>
 </plist>

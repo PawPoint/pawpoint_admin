@@ -19,6 +19,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
   List<dynamic> _rejected = [];
   bool _loading = true;
   String? _doctorName;
+  String? _role;
 
   @override
   void initState() {
@@ -36,9 +37,10 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
             .doc(uid)
             .get();
         if (doc.exists && mounted) {
+          final data = doc.data() as Map<String, dynamic>;
           setState(() {
-            _doctorName =
-                (doc.data() as Map<String, dynamic>)['name'] ?? '';
+            _doctorName = data['name'] ?? '';
+            _role = data['role'] ?? 'staff_admin';
           });
         }
       } catch (_) {}
@@ -60,12 +62,33 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
         AdminApiService.fetchCompletedAppointments(),
         AdminApiService.fetchRejectedAppointments(),
       ]);
-      if (mounted) setState(() {
-        _pending = results[0];
-        _completed = results[1];
-        _rejected = results[2];
-        _loading = false;
-      });
+      if (mounted) {
+        final currentDoctor = (_doctorName ?? '').toLowerCase();
+
+        setState(() {
+          if (_role == 'super_admin') {
+            _pending = results[0];
+            _completed = results[1];
+            _rejected = results[2];
+          } else {
+            _pending = results[0].where((a) {
+              final doctorField = (a['doctor'] as String? ?? '').toLowerCase();
+              return doctorField == currentDoctor;
+            }).toList();
+
+            _completed = results[1].where((a) {
+              final doctorField = (a['doctor'] as String? ?? '').toLowerCase();
+              return doctorField == currentDoctor;
+            }).toList();
+
+            _rejected = results[2].where((a) {
+              final doctorField = (a['doctor'] as String? ?? '').toLowerCase();
+              return doctorField == currentDoctor;
+            }).toList();
+          }
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -257,9 +280,9 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.12),
+                color: const Color(0xFF10B981).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
@@ -690,6 +713,12 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
     try { dt = DateTime.parse(appt['dateTime'] as String); } catch (_) {}
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     final note = (appt['doctor_note'] as String? ?? '').trim();
+    final status = appt['status'] ?? 'rejected';
+    
+    // Explicit labels for different non-approved states
+    String label = 'Rejected';
+    if (status == 'cancelled') label = 'User Cancelled';
+    if (status == 'auto_cancelled') label = 'Auto Cancelled';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -729,7 +758,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
                     color: const Color(0xFFEF4444).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text('Rejected',
+                  child: Text(label,
                       style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ],
