@@ -161,7 +161,8 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
               ),
               Switch.adaptive(
                 value: _showAll,
-                activeColor: const Color(0xFF10B981),
+                activeThumbColor: const Color(0xFF10B981),
+                activeTrackColor: const Color(0xFF10B981).withValues(alpha: 0.5),
                 onChanged: (val) => setState(() => _showAll = val),
               ),
             ],

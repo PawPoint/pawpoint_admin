@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/image_utils.dart';
 
 class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
@@ -113,6 +114,8 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
 
   Widget _buildHeader(String name, String email, String initials,
       String roleLabel, Color roleColor) {
+    final photoUrl = _profile?['photoUrl'] as String?;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 32, 20, 40),
@@ -130,11 +133,14 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           CircleAvatar(
             radius: 40,
             backgroundColor: Colors.white30,
-            child: Text(initials,
-                style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 32)),
+            backgroundImage: ImageUtils.getProfileImage(photoUrl ?? ''),
+            child: (photoUrl == null || photoUrl.isEmpty)
+                ? Text(initials,
+                    style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 32))
+                : null,
           ),
           const SizedBox(height: 12),
           Text(name,

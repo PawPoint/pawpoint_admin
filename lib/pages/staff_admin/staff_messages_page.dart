@@ -134,6 +134,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
         receiverId: _activePeerUid!,
         content: text,
         senderName: _myName,
+        receiverName: _activePeerName ?? '',
         senderRole: 'staff_admin',
       );
       // Refresh messages immediately after sending
@@ -160,17 +161,17 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Start Conversation',
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.w600)),
         content: SizedBox(
           width: 400,
           height: 300,
           child: _staff.where((m) => m['uid'] != _myUid).isEmpty
               ? Center(
                   child: Text('No other staff available',
-                      style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+                      style: GoogleFonts.poppins(color: Colors.black45)),
                 )
               : ListView(
                   children: _staff
@@ -181,13 +182,13 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
                     final role = member['role'] as String? ?? '';
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                        backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
                         child: const Icon(Icons.person_rounded, color: Color(0xFF6366F1), size: 18),
                       ),
                       title: Text(name,
-                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                          style: GoogleFonts.poppins(color: Colors.black87, fontSize: 13)),
                       subtitle: Text(role,
-                          style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
+                          style: GoogleFonts.poppins(color: Colors.black45, fontSize: 11)),
                       onTap: () {
                         final convId = ([_myUid, uid]..sort()).join('__');
                         Navigator.pop(ctx);
@@ -200,20 +201,26 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.black45)),
           ),
         ],
       ),
     );
   }
 
-  // ── Helper: resolve peer name from conversation ────────────────────────────
+  // ── Helper: resolve peer name from conversation ───────────────────────────────
   String _peerName(Map<String, dynamic> conv) {
     final participants = (conv['participants'] as List?)?.cast<String>() ?? [];
     final peerUid = participants.firstWhere((p) => p != _myUid, orElse: () => '');
     if (peerUid.isEmpty) return 'Unknown';
+    // 1. Try the loaded staff list first (most reliable)
     final staffMatch = _staff.where((s) => s['uid'] == peerUid).toList();
     if (staffMatch.isNotEmpty) return staffMatch.first['name'] as String? ?? peerUid;
+    // 2. Fall back to participant_names stored in the conversation doc
+    final names = conv['participant_names'] as Map<String, dynamic>?;
+    if (names != null && names[peerUid] != null && (names[peerUid] as String).isNotEmpty) {
+      return names[peerUid] as String;
+    }
     return peerUid;
   }
 
@@ -226,7 +233,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Row(
         children: [
           _buildSidebar(),
@@ -242,8 +249,8 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
     return Container(
       width: 280,
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        border: Border(right: BorderSide(color: Color(0xFF334155))),
+        color: Color(0xFFF8F9FA),
+        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
@@ -254,7 +261,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
               children: [
                 Text('Messages',
                     style: GoogleFonts.poppins(
-                        color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                        color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 15)),
                 IconButton(
                   icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF6366F1)),
                   tooltip: 'New Chat',
@@ -270,7 +277,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
                     ? Center(
                         child: Text('No conversations yet',
                             style: GoogleFonts.poppins(
-                                color: const Color(0xFF64748B), fontSize: 13)),
+                                color: Colors.black38, fontSize: 13)),
                       )
                     : ListView.builder(
                         itemCount: _conversations.length,
@@ -282,22 +289,22 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
                           final pUid = _peerUid(conv);
                           return ListTile(
                             selected: isActive,
-                            selectedTileColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                            selectedTileColor: const Color(0xFF6366F1).withValues(alpha: 0.08),
                             leading: CircleAvatar(
                               backgroundColor:
-                                  const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                  const Color(0xFF6366F1).withValues(alpha: 0.15),
                               child: const Icon(Icons.person_rounded,
                                   color: Color(0xFF6366F1), size: 18),
                             ),
                             title: Text(name,
                                 style: GoogleFonts.poppins(
-                                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                    color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis),
                             subtitle: Text(
                               conv['last_message'] ?? '',
                               style: GoogleFonts.poppins(
-                                  color: const Color(0xFF64748B), fontSize: 11),
+                                  color: Colors.black45, fontSize: 11),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -317,10 +324,10 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.chat_bubble_outline_rounded,
-              color: Color(0xFF334155), size: 56),
+              color: Color(0xFFCBD5E1), size: 56),
           const SizedBox(height: 16),
           Text('Select a contact to start chatting',
-              style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 15)),
+              style: GoogleFonts.poppins(color: Colors.black38, fontSize: 15)),
         ],
       ),
     );
@@ -333,8 +340,8 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
-            border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
           ),
           child: Row(
             children: [
@@ -344,7 +351,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
                 child: Text(
                   _activePeerName ?? 'Chat',
                   style: GoogleFonts.poppins(
-                      color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                      color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -363,7 +370,7 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
               ? Center(
                   child: Text('No messages yet. Say hello! 👋',
                       style:
-                          GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13)),
+                          GoogleFonts.poppins(color: Colors.black38, fontSize: 13)),
                 )
               : ListView.builder(
                   controller: _scrollCtrl,
@@ -386,14 +393,14 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: const BoxConstraints(maxWidth: 400),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF6366F1) : const Color(0xFF1E293B),
+          color: isMe ? const Color(0xFF6366F1) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(isMe ? 16 : 4),
             bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
-          border: isMe ? null : Border.all(color: const Color(0xFF334155)),
+          border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Column(
           crossAxisAlignment:
@@ -404,10 +411,13 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(msg['sender_name'] ?? 'Admin',
                     style: GoogleFonts.poppins(
-                        color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+                        color: const Color(0xFF6366F1), fontSize: 10, fontWeight: FontWeight.w600)),
               ),
             Text(msg['content'] ?? '',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.4)),
+                style: GoogleFonts.poppins(
+                    color: isMe ? Colors.white : Colors.black87,
+                    fontSize: 13,
+                    height: 1.4)),
           ],
         ),
       ),
@@ -417,22 +427,26 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
   Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFF1E293B),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _msgCtrl,
               onSubmitted: (_) => _send(),
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
+              style: GoogleFonts.poppins(color: Colors.black87, fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Type your message...',
-                hintStyle: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13),
+                hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 13),
                 filled: true,
-                fillColor: const Color(0xFF0F172A),
+                fillColor: const Color(0xFFF1F5F9),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ),

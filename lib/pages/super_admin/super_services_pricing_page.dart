@@ -45,11 +45,11 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(isEdit ? 'Edit Service' : 'Add New Service',
               style: GoogleFonts.poppins(
-                  color: Colors.white, fontWeight: FontWeight.w700)),
+                  color: const Color(0xFF1E293B), fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -79,7 +79,8 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
+                backgroundColor: const Color(0xFF10B981),
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
@@ -113,7 +114,7 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
                             isEdit
                                 ? 'Service updated ✓'
                                 : 'Service added ✓',
-                            const Color(0xFF6366F1));
+                            const Color(0xFF10B981));
                         _load();
                       } catch (e) {
                         setLocal(() => isSaving = false);
@@ -149,19 +150,23 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
       {TextInputType type = TextInputType.text, int maxLines = 1}) {
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Color(0xFF1E293B)),
       keyboardType: type,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF64748B)),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
         prefixIcon: maxLines == 1
-            ? Icon(icon, color: const Color(0xFF64748B), size: 18)
+            ? Icon(icon, color: const Color(0xFF94A3B8), size: 18)
             : null,
         filled: true,
-        fillColor: const Color(0xFF0F172A),
+        fillColor: const Color(0xFFF8FAFF),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
         contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       ),
     );
@@ -179,14 +184,14 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: Column(
         children: [
           _buildHeader(),
           Expanded(
             child: _loading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                    child: CircularProgressIndicator(color: Color(0xFF10B981)))
                 : _services.isEmpty
                     ? _buildEmpty()
                     : _buildList(),
@@ -211,12 +216,13 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
           ),
           ElevatedButton.icon(
             onPressed: () => _showAddEditDialog(),
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
             label: Text('Add Service',
                 style: GoogleFonts.poppins(
+                    color: Colors.white,
                     fontWeight: FontWeight.w600, fontSize: 13)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: const Color(0xFF10B981),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               padding:
@@ -235,7 +241,7 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.local_offer_outlined,
-              color: Color(0xFF334155), size: 56),
+              color: Color(0xFFE2E8F0), size: 56),
           const SizedBox(height: 16),
           Text('No services defined yet',
               style: GoogleFonts.poppins(
@@ -243,9 +249,9 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: () => _showAddEditDialog(),
-            icon: const Icon(Icons.add_rounded, color: Color(0xFF6366F1)),
+            icon: const Icon(Icons.add_rounded, color: Color(0xFF10B981)),
             label: Text('Add first service',
-                style: GoogleFonts.poppins(color: const Color(0xFF6366F1))),
+                style: GoogleFonts.poppins(color: const Color(0xFF10B981))),
           ),
         ],
       ),
@@ -272,16 +278,16 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
           Container(
             width: 48, height: 48,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.medical_services_rounded, color: color, size: 22),
@@ -293,13 +299,13 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
               children: [
                 Text(s['name'] ?? 'Unnamed Service',
                     style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: const Color(0xFF1E293B),
                         fontWeight: FontWeight.w600,
                         fontSize: 14)),
                 if ((s['description'] ?? '').toString().isNotEmpty)
                   Text(s['description'],
                       style: GoogleFonts.poppins(
-                          color: const Color(0xFF94A3B8), fontSize: 12),
+                          color: const Color(0xFF64748B), fontSize: 12),
                       maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -319,7 +325,7 @@ class _SuperServicesPricingPageState extends State<SuperServicesPricingPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text('Edit',

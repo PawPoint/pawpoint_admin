@@ -33,9 +33,9 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
           : _error != null
               ? _buildError()
               : _buildContent(),
@@ -52,14 +52,17 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
           Text(
             'Cannot reach admin backend.\nMake sure it is running on port 8001.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 14),
+            style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 14),
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
@@ -79,10 +82,10 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Welcome back, Super Admin 👋',
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text('Here\'s what\'s happening at PawPoint today.',
-              style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13)),
+              style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13)),
           const SizedBox(height: 28),
 
           // ── Stat Cards ──────────────────────────────────────────
@@ -125,9 +128,9 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
       width: 160,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,16 +138,16 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 14),
           Text(value,
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
+              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
-          Text(label, style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12)),
+          Text(label, style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 12)),
         ],
       ),
     );
@@ -154,14 +157,15 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 16)),
           const SizedBox(height: 24),
           SizedBox(
             height: 190,
@@ -176,7 +180,7 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
                     children: [
                       if (val > 0)
                         Text('${data[i]}',
-                            style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 9)),
+                            style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 9)),
                       const SizedBox(height: 4),
                       AnimatedContainer(
                         duration: Duration(milliseconds: 300 + i * 50),
@@ -186,7 +190,7 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
                           gradient: const LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
-                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            colors: [Color(0xFF10B981), Color(0xFF3B82F6)],
                           ),
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -210,8 +214,9 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
@@ -223,17 +228,17 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
               children: [
                 CircularProgressIndicator(
                   value: total > 0 ? value / total : 0,
-                  backgroundColor: const Color(0xFF334155),
+                  backgroundColor: const Color(0xFFE2E8F0),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                   strokeWidth: 10,
                 ),
                 Text('$pct%',
-                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                    style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w700, fontSize: 16)),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          Text(label, style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13)),
+          Text(label, style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 13)),
           Text('$value of $total',
               style: GoogleFonts.poppins(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
@@ -252,14 +257,15 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Recent Activity',
-              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
+              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 16)),
           const SizedBox(height: 16),
           ...activities.map((a) => Padding(
             padding: const EdgeInsets.only(bottom: 14),
@@ -268,7 +274,7 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: a.color.withValues(alpha: 0.15),
+                    color: a.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(a.icon, color: a.color, size: 18),
@@ -279,13 +285,13 @@ class _SuperDashboardPageState extends State<SuperDashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(a.title,
-                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                          style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w500)),
                       Text(a.subtitle,
-                          style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 12)),
+                          style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 12)),
                     ],
                   ),
                 ),
-                Text(a.time, style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11)),
+                Text(a.time, style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
               ],
             ),
           )),

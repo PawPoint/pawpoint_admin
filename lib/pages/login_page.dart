@@ -10,6 +10,8 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 import '../core/utils/validators.dart';
 import '../core/utils/error_handler.dart';
+import '../services/admin_api_service.dart';
+import 'verify_email_page.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -41,17 +43,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              // Header Row – back button + logo
-              Row(
+              // Header Row – centered logo
+              const Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, size: 20),
-                    onPressed: () => Navigator.maybePop(context),
-                  ),
-                  const Spacer(),
-                  const AppLogo(width: 250),
-                  const Spacer(),
-                  const SizedBox(width: 48),
+                  Spacer(),
+                  AppLogo(width: 250),
+                  Spacer(),
                 ],
               ),
 
@@ -156,14 +153,47 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       final data = adminDoc.data() as Map<String, dynamic>;
       final String role = data['role'] ?? '';
+      final bool isActive = data['isActive'] ?? false;
+      final bool isDeactivated = data['isDeactivated'] ?? false;
 
-      // Step 3 – Role-based routing
+      // New Guard: Deactivated/Fired staff cannot log in
+      if (isDeactivated) {
+        await FirebaseAuth.instance.signOut();
+        _showError('Access Denied: This account has been deactivated.');
+        return;
+      }
+
+      // Step 3 – Email Verification Check (NEW)
+      if (credential.user != null && !credential.user!.emailVerified) {
+        // If it's a super_admin, we might want to bypass or handle differently, 
+        // but for now, let's require verification for ALL admins.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerifyAdminEmailPage(role: role),
+          ),
+        );
+        return;
+      }
+
+      // Step 4 – Account Activation (only after verification)
+      if (!isActive) {
+        try {
+          await AdminApiService.markStaffActive(uid);
+        } catch (e) {
+          debugPrint('Activation failed: $e');
+        }
+      }
+
+      // Step 5 – Role-based routing
+      if (!mounted) return;
       if (role == 'super_admin') {
         Navigator.pushNamedAndRemoveUntil(context, '/super_admin', (_) => false);
       } else if (role == 'staff_admin') {
         Navigator.pushNamedAndRemoveUntil(context, '/staff_admin', (_) => false);
       } else {
         await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
         _showError('Unauthorized Access: Unknown role assigned to this account.');
       }
     } catch (e) {

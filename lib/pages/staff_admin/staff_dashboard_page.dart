@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/admin_api_service.dart';
+import '../../core/utils/image_utils.dart';
 
 class StaffDashboardPage extends StatefulWidget {
   const StaffDashboardPage({super.key});
@@ -13,8 +14,11 @@ class StaffDashboardPage extends StatefulWidget {
 
 class _StaffDashboardPageState extends State<StaffDashboardPage> {
   List<dynamic> _pending = [];
+  List<dynamic> _recentCancellations = [];
   bool _loading = true;
   String? _doctorName;
+  String? _photoUrl;
+  String? _role;
 
   @override
   void initState() {
@@ -31,9 +35,11 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
             .doc(uid)
             .get();
         if (doc.exists && mounted) {
+          final data = doc.data() as Map<String, dynamic>;
           setState(() {
-            _doctorName =
-                (doc.data() as Map<String, dynamic>)['name'] ?? 'Doctor';
+            _doctorName = data['name'] ?? 'Doctor';
+            _photoUrl = data['photoUrl'];
+            _role = data['role'] ?? 'staff_admin';
           });
         }
       } catch (_) {}
@@ -44,8 +50,41 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final data = await AdminApiService.fetchPendingAppointments();
-      if (mounted) setState(() { _pending = data; _loading = false; });
+      final results = await Future.wait([
+        AdminApiService.fetchPendingAppointments(),
+        AdminApiService.fetchRejectedAppointments(),
+      ]);
+      if (mounted) {
+        final currentDoctor = (_doctorName ?? '').toLowerCase();
+        final now = DateTime.now();
+
+        setState(() {
+          if (_role == 'super_admin') {
+            _pending = results[0];
+            _recentCancellations = results[1].where((a) {
+              try {
+                final ts = DateTime.parse(a['rejected_at'] ?? a['cancelledAt'] ?? '');
+                return ts.isAfter(now.subtract(const Duration(hours: 24)));
+              } catch (_) { return false; }
+            }).toList();
+          } else {
+            _pending = results[0].where((a) {
+              final doctorField = (a['doctor'] as String? ?? '').toLowerCase();
+              return doctorField == currentDoctor;
+            }).toList();
+
+            _recentCancellations = results[1].where((a) {
+              final doctorField = (a['doctor'] as String? ?? '').toLowerCase();
+              if (doctorField != currentDoctor) return false;
+              try {
+                final ts = DateTime.parse(a['rejected_at'] ?? a['cancelledAt'] ?? '');
+                return ts.isAfter(now.subtract(const Duration(hours: 24)));
+              } catch (_) { return false; }
+            }).toList();
+          }
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -54,24 +93,90 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            _buildStatRow(),
-            _buildSectionTitle('Pending Appointments'),
-            _loading
-                ? const Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(child: CircularProgressIndicator(color: Color(0xFF10B981))),
-                  )
-                : _pending.isEmpty
-                    ? _buildEmpty()
-                    : _buildPendingList(),
-          ],
+      child: RefreshIndicator(
+        onRefresh: _load,
+        color: const Color(0xFF10B981),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              _buildStatRow(),
+              if (_recentCancellations.isNotEmpty) _buildCancellationAlerts(),
+              _buildSectionTitle('Upcoming / Pending'),
+              _loading
+                  ? const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator(color: Color(0xFF10B981))),
+                    )
+                  : _pending.isEmpty
+                      ? _buildEmpty()
+                      : _buildPendingList(),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCancellationAlerts() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 18),
+              const SizedBox(width: 8),
+              Text('Recent Cancellations (24h)',
+                  style: GoogleFonts.poppins(
+                      color: const Color(0xFFEF4444), fontWeight: FontWeight.w700, fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ..._recentCancellations.map((c) => _buildCancelCard(c)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelCard(Map<String, dynamic> c) {
+    final status = c['status'] ?? 'cancelled';
+    final label = status == 'cancelled' ? 'User Cancelled' : 'Rejected';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(c['service'] ?? 'Service',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.black87)),
+                Text('${c['user_name']} · Pet: ${c['pet']}',
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(label,
+                style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontSize: 10, fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
@@ -106,13 +211,23 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
               ],
             ),
           ),
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.white24,
-            child: Text(
-              (_doctorName ?? 'D')[0].toUpperCase(),
-              style: GoogleFonts.poppins(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 22),
+          GestureDetector(
+            onTap: () {
+              // Navigation to profile or similar could go here
+            },
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.white24,
+              backgroundImage: ImageUtils.getProfileImage(_photoUrl ?? ''),
+              child: (_photoUrl == null || _photoUrl!.isEmpty)
+                  ? Text(
+                      (_doctorName ?? 'D')[0].toUpperCase(),
+                      style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22),
+                    )
+                  : null,
             ),
           ),
         ],

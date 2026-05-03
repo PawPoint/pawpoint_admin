@@ -45,9 +45,9 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0F172A),
+      color: Colors.white,
       child: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -69,8 +69,9 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
@@ -86,7 +87,7 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
               Text(
                 '${_monthName(_focusedMonth.month)} ${_focusedMonth.year}',
                 style: GoogleFonts.poppins(
-                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
+                    color: const Color(0xFF1E293B), fontWeight: FontWeight.w700, fontSize: 17),
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
@@ -127,13 +128,13 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF6366F1)
+                        ? const Color(0xFF10B981)
                         : isToday
-                            ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                            ? const Color(0xFF10B981).withValues(alpha: 0.1)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: isToday && !isSelected
-                        ? Border.all(color: const Color(0xFF6366F1), width: 1)
+                        ? Border.all(color: const Color(0xFF10B981), width: 1)
                         : null,
                   ),
                   child: Column(
@@ -142,7 +143,7 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                       Text(
                         '${i - startWeekday + 1}',
                         style: GoogleFonts.poppins(
-                          color: isSelected ? Colors.white : Colors.white70,
+                          color: isSelected ? Colors.white : (isToday ? const Color(0xFF10B981) : const Color(0xFF1E293B)),
                           fontSize: 13,
                           fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
                         ),
@@ -151,8 +152,9 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                         Container(
                           width: 5, height: 5,
                           margin: const EdgeInsets.only(top: 2),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981), shape: BoxShape.circle,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.white70 : const Color(0xFF10B981), 
+                            shape: BoxShape.circle,
                           ),
                         ),
                     ],
@@ -173,15 +175,16 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Appointments — ${_monthName(day.month)} ${day.day}',
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+            style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: 12),
           if (appts.isEmpty)
@@ -195,16 +198,16 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       width: 4, height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1),
+                        color: const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -214,15 +217,15 @@ class _SuperCalendarPageState extends State<SuperCalendarPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(a['service'] ?? 'Service',
-                              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                              style: GoogleFonts.poppins(color: const Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 13)),
                           Text('Pet: ${a['pet'] ?? '-'}  •  Dr. ${a['doctor'] ?? '-'}',
-                              style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 11)),
+                              style: GoogleFonts.poppins(color: const Color(0xFF64748B), fontSize: 11)),
                         ],
                       ),
                     ),
                     if (dt != null)
                       Text(_timeStr(dt),
-                          style: GoogleFonts.poppins(color: const Color(0xFF6366F1), fontSize: 12, fontWeight: FontWeight.w600)),
+                          style: GoogleFonts.poppins(color: const Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               );

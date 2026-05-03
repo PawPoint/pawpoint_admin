@@ -81,7 +81,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.white,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -89,7 +89,12 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
             child: Column(
               children: [
                 _buildTopBar(isMobile),
-                Expanded(child: _pages[_selectedIndex]),
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    child: _pages[_selectedIndex],
+                  ),
+                ),
               ],
             ),
           ),
@@ -104,9 +109,8 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       width: _sidebarExpanded ? 240 : 70,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Colors.black.withValues(alpha: 0.08), width: 1)),
+      decoration: const BoxDecoration(
+        color: Color(0xFF000000),
       ),
       child: Column(
         children: [
@@ -132,19 +136,28 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
         height: 64,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.07))),
+          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
         ),
         child: _sidebarExpanded
             ? Align(
                 alignment: Alignment.centerLeft,
-                child: Image.asset(
-                  'assets/images/logo1.png',
-                  height: 28,
-                  fit: BoxFit.contain,
+                child: Row(
+                  children: [
+                    const Icon(Icons.pets_rounded, color: Color(0xFF10B981), size: 24),
+                    const SizedBox(width: 10),
+                    Text(
+                      'PawPoint',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
               )
             : const Center(
-                child: Icon(Icons.pets_rounded, color: Colors.black87, size: 28),
+                child: Icon(Icons.pets_rounded, color: Color(0xFF10B981), size: 28),
               ),
       ),
     );
@@ -156,7 +169,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
-        color: selected ? Colors.black : Colors.transparent,
+        color: selected ? const Color(0xFF10B981) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
@@ -168,13 +181,13 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
                     children: [
                       const SizedBox(width: 12),
                       Icon(item.icon,
-                          color: selected ? Colors.white : Colors.black54,
+                          color: selected ? Colors.white : Colors.white70,
                           size: 22),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(item.label,
                             style: GoogleFonts.poppins(
-                                color: selected ? Colors.white : Colors.black87,
+                                color: selected ? Colors.white : Colors.white70,
                                 fontWeight: selected
                                     ? FontWeight.w600
                                     : FontWeight.w400,
@@ -186,7 +199,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
                   )
                 : Center(
                     child: Icon(item.icon,
-                        color: selected ? Colors.white : Colors.black54,
+                        color: selected ? Colors.white : Colors.white70,
                         size: 22),
                   ),
           ),
@@ -233,23 +246,22 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08))),
+      decoration: const BoxDecoration(
+        color: Colors.black,
       ),
       child: Row(
         children: [
           if (isMobile)
             Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black87),
+                icon: const Icon(Icons.menu, color: Colors.white),
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
           Text(
             _navItems[_selectedIndex].label,
             style: GoogleFonts.poppins(
-                color: Colors.black87,
+                color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 18),
           ),
@@ -259,19 +271,18 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.black12),
               ),
               child: Text(_adminName,
                   style: GoogleFonts.poppins(
-                      color: Colors.black87,
+                      color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ),
           CircleAvatar(
             radius: 18,
-            backgroundColor: Colors.black,
+            backgroundColor: const Color(0xFF10B981),
             child: Text(_adminInitials,
                 style: GoogleFonts.poppins(
                     color: Colors.white,
