@@ -66,10 +66,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   Positioned(
-                    bottom: -30,
+                    bottom: -10,
                     child: Image.asset(
                       'assets/images/c1.png',
-                      width: 350,
+                      width: 250,
                       fit: BoxFit.contain,
                       errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
