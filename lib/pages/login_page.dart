@@ -69,7 +69,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     bottom: -10,
                     child: Image.asset(
                       'assets/images/c1.png',
-                      width: 250,
+                      width: 260,
                       fit: BoxFit.contain,
                       errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
