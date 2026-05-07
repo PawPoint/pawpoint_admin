@@ -137,6 +137,24 @@ class AdminApiService {
     if (res.statusCode != 200) throw Exception('Failed to reject');
   }
 
+  // ─────────────────────────── Cancel by Admin (with refund) ───────────────
+  static Future<void> cancelAppointmentByAdmin(
+    String userId,
+    String appointmentId, {
+    String reason = '',
+  }) async {
+    final res = await http.put(
+      Uri.parse(
+          '$_base/api/admin/appointments/$userId/$appointmentId/cancel'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'status': 'cancelled', 'doctor_note': reason}),
+    ).timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) {
+      final detail = jsonDecode(res.body)['detail'] ?? 'Failed to cancel';
+      throw Exception(detail);
+    }
+  }
+
   // ─────────────────────────── Propose Reschedule ───────────────────────────
   static Future<void> proposeReschedule(
     String userId,
