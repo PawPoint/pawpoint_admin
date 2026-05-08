@@ -162,34 +162,18 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Cancel & Refund',
+        title: Text('Cancel Appointment',
             style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Cancel this appointment and issue a full refund to the client.',
+            Text('Cancel this appointment. The client will be notified.',
                 style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13, height: 1.4)),
             const SizedBox(height: 4),
             Text('${appt['service']}  ·  Pet: ${appt['pet']}',
                 style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.payments_rounded, color: Color(0xFF10B981), size: 16),
-                  const SizedBox(width: 8),
-                  Text('Full refund will be processed automatically.',
-                      style: GoogleFonts.poppins(color: const Color(0xFF10B981), fontSize: 12)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
             TextField(
               controller: noteCtrl,
               style: const TextStyle(color: Colors.white),
@@ -206,7 +190,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Cancel & Refund', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text('Cancel Appointment', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -219,7 +203,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
           appt['id'] as String,
           reason: noteCtrl.text.trim(),
         );
-        _showSnack('Appointment cancelled — refund initiated ✔', const Color(0xFF10B981));
+        _showSnack('Appointment cancelled ✔', const Color(0xFF10B981));
         _load();
       } catch (e) {
         _showSnack('Error: $e', const Color(0xFFEF4444));
@@ -595,7 +579,7 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
                   child: OutlinedButton.icon(
                     onPressed: () => _cancelByAdmin(appt),
                     icon: const Icon(Icons.money_off_rounded, size: 14, color: Color(0xFFEF4444)),
-                    label: Text('Cancel & Refund',
+                    label: Text('Cancel Appointment',
                         style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontWeight: FontWeight.w600, fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFEF4444)),

@@ -137,7 +137,7 @@ class AdminApiService {
     if (res.statusCode != 200) throw Exception('Failed to reject');
   }
 
-  // ─────────────────────────── Cancel by Admin (with refund) ───────────────
+  // ─────────────────────────── Cancel by Admin ──────────────────────────────
   static Future<void> cancelAppointmentByAdmin(
     String userId,
     String appointmentId, {
