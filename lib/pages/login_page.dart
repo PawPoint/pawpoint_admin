@@ -24,6 +24,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> with SingleTickerProvid
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
@@ -111,7 +112,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> with SingleTickerProvid
                                   "assets/images/c1.png",
                                   width: 250,
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const SizedBox(height: 100),
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox(height: 100),
                                 ),
                               ),
                             ),
@@ -124,8 +125,19 @@ class _AdminLoginPageState extends State<AdminLoginPage> with SingleTickerProvid
                           controller: _passwordController,
                           hint: "Password",
                           prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           isRounded: true,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.black45,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
 
                         const SizedBox(height: 35),

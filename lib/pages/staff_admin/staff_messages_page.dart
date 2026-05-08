@@ -232,33 +232,35 @@ class _StaffMessagesPageState extends State<StaffMessagesPage> {
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        final isWide = constraints.maxWidth >= 600;
-        if (isWide) {
-          // Tablet / web — side-by-side layout
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (_, constraints) {
+          final isWide = constraints.maxWidth >= 600;
+          if (isWide) {
+            // Tablet / web — side-by-side layout
+            return Container(
+              color: Colors.white,
+              child: Row(
+                children: [
+                  SizedBox(width: 280, child: _buildSidebar()),
+                  Expanded(
+                    child: _activeConvId == null
+                        ? _buildEmptyState()
+                        : _buildChatPanel(showBack: false),
+                  ),
+                ],
+              ),
+            );
+          }
+          // Phone — single-panel layout
           return Container(
             color: Colors.white,
-            child: Row(
-              children: [
-                SizedBox(width: 280, child: _buildSidebar()),
-                Expanded(
-                  child: _activeConvId == null
-                      ? _buildEmptyState()
-                      : _buildChatPanel(showBack: false),
-                ),
-              ],
-            ),
+            child: _activeConvId == null
+                ? _buildSidebar()
+                : _buildChatPanel(showBack: true),
           );
-        }
-        // Phone — single-panel layout
-        return Container(
-          color: Colors.white,
-          child: _activeConvId == null
-              ? _buildSidebar()
-              : _buildChatPanel(showBack: true),
-        );
-      },
+        },
+      ),
     );
   }
 
