@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Core UI & Utility Imports (shared with user app)
+// Core UI & Utility Imports
 import '../core/widgets/app_text_field.dart';
 import '../core/widgets/app_button.dart';
 import '../core/widgets/app_logo.dart';
@@ -20,123 +20,179 @@ class AdminLoginPage extends StatefulWidget {
   State<AdminLoginPage> createState() => _AdminLoginPageState();
 }
 
-class _AdminLoginPageState extends State<AdminLoginPage> {
+class _AdminLoginPageState extends State<AdminLoginPage> with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  late final AnimationController _animController;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+
+    _animController.forward();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ── Same visual structure as the user LoginPage ────────────────────────
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-              // Header Row – centered logo
-              const Row(
-                children: [
-                  Spacer(),
-                  AppLogo(width: 250),
-                  Spacer(),
-                ],
-              ),
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SlideTransition(
+            position: _slideAnim,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
 
-              const Spacer(),
-
-              // Email field with decorative cat image (same as user login)
-              Stack(
-                alignment: Alignment.bottomCenter,
-                clipBehavior: Clip.none,
-                children: [
-                  AppTextField(
-                    controller: _emailController,
-                    hint: 'Email',
-                    isRounded: false,
-                    keyboardType: TextInputType.emailAddress,
+                // ── Header ─────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Center(child: AppLogo(width: 200)),
+                    ],
                   ),
-                  Positioned(
-                    bottom: -30,
-                    child: Image.asset(
-                      'assets/images/c1.png',
-                      width: 350,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+
+                // ── Login Fields ───────────────────────────────────────
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 170), 
+
+                        Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.topCenter,
+                          children: [
+                            AppTextField(
+                              controller: _emailController,
+                              hint: "Email Address",
+                              prefixIcon: Icons.email_outlined,
+                              isRounded: true, 
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+
+                            // The Cat Position
+                            Positioned(
+                              top: -105, 
+                              child: IgnorePointer(
+                                child: Image.asset(
+                                  "assets/images/c1.png",
+                                  width: 250,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox(height: 100),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        AppTextField(
+                          controller: _passwordController,
+                          hint: "Password",
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          isRounded: true,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.black45,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 35),
+
+                        AppButton(
+                          text: "LOGIN",
+                          isLoading: _isLoading,
+                          onPressed: _handleAdminLogin,
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        // Portal Label
+                        Text(
+                          'ADMIN PORTAL',
+                          style: AppTextStyles.h1.copyWith(
+                            fontSize: 12,
+                            color: Colors.black38,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              AppTextField(
-                controller: _passwordController,
-                hint: 'Password',
-                obscureText: true,
-                isRounded: false,
-              ),
-
-              const SizedBox(height: 40),
-
-              AppButton(
-                text: 'LOGIN',
-                isLoading: _isLoading,
-                onPressed: _handleAdminLogin,
-              ),
-
-              const SizedBox(height: 20),
-
-              // Small label so staff know this is the admin portal
-              Text(
-                'Admin Portal',
-                style: AppTextStyles.h1.copyWith(
-                  fontSize: 12,
-                  color: Colors.black38,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w500,
                 ),
-              ),
-
-              const Spacer(),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── Login handler following the blueprint gatekeeper logic ─────────────
   Future<void> _handleAdminLogin() async {
-    final email    = _emailController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     final emailError = Validators.validateEmail(email);
     if (emailError != null) { _showError(emailError); return; }
 
-    final passError = Validators.validateRequired(password, 'Password');
-    if (passError != null) { _showError(passError); return; }
+    final passwordError = Validators.validateRequired(password, "Password");
+    if (passwordError != null) { _showError(passwordError); return; }
 
     setState(() => _isLoading = true);
 
     try {
-      // Step 1 – Firebase Auth verification
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       final uid = credential.user!.uid;
 
-      // Step 2 – Query the 'admins' collection for role
       DocumentSnapshot adminDoc = await FirebaseFirestore.instance
           .collection('admins')
           .doc(uid)
@@ -145,7 +201,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       if (!mounted) return;
 
       if (!adminDoc.exists) {
-        // UID not in admins collection → force logout
         await FirebaseAuth.instance.signOut();
         _showError('Unauthorized Access: This account has no admin privileges.');
         return;
@@ -156,17 +211,13 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       final bool isActive = data['isActive'] ?? false;
       final bool isDeactivated = data['isDeactivated'] ?? false;
 
-      // New Guard: Deactivated/Fired staff cannot log in
       if (isDeactivated) {
         await FirebaseAuth.instance.signOut();
         _showError('Access Denied: This account has been deactivated.');
         return;
       }
 
-      // Step 3 – Email Verification Check (NEW)
       if (credential.user != null && !credential.user!.emailVerified) {
-        // If it's a super_admin, we might want to bypass or handle differently, 
-        // but for now, let's require verification for ALL admins.
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -176,7 +227,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         return;
       }
 
-      // Step 4 – Account Activation (only after verification)
       if (!isActive) {
         try {
           await AdminApiService.markStaffActive(uid);
@@ -185,7 +235,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         }
       }
 
-      // Step 5 – Role-based routing
       if (!mounted) return;
       if (role == 'super_admin') {
         Navigator.pushNamedAndRemoveUntil(context, '/super_admin', (_) => false);

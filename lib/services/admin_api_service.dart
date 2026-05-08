@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_storage/firebase_storage.dart';
 
+import 'package:pawpoint_admin/admin_api_config.dart';
+
 /// Service that talks to the Admin Backend (port 8001).
 class AdminApiService {
-  static const String _base = 'http://localhost:8001';
+  static const String _base = AdminApiConfig.baseUrl;
 
   /// Uploads a profile image to Firebase Storage and returns the download URL.
   static Future<String> uploadProfileImage(Uint8List fileBytes, String email) async {
@@ -133,6 +135,24 @@ class AdminApiService {
       body: jsonEncode({'status': 'rejected', 'doctor_note': doctorNote}),
     ).timeout(const Duration(seconds: 30));
     if (res.statusCode != 200) throw Exception('Failed to reject');
+  }
+
+  // ─────────────────────────── Cancel by Admin ──────────────────────────────
+  static Future<void> cancelAppointmentByAdmin(
+    String userId,
+    String appointmentId, {
+    String reason = '',
+  }) async {
+    final res = await http.put(
+      Uri.parse(
+          '$_base/api/admin/appointments/$userId/$appointmentId/cancel'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'status': 'cancelled', 'doctor_note': reason}),
+    ).timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) {
+      final detail = jsonDecode(res.body)['detail'] ?? 'Failed to cancel';
+      throw Exception(detail);
+    }
   }
 
   // ─────────────────────────── Propose Reschedule ───────────────────────────

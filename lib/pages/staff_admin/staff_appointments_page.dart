@@ -154,38 +154,43 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
     }
   }
 
-  Future<void> _reject(Map<String, dynamic> appt) async {
+
+  Future<void> _cancelByAdmin(Map<String, dynamic> appt) async {
     final noteCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Reject Appointment',
+        title: Text('Cancel Appointment',
             style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Service: ${appt['service']}\nPet: ${appt['pet']}',
-                style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13)),
+            Text('Cancel this appointment. The client will be notified.',
+                style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13, height: 1.4)),
+            const SizedBox(height: 4),
+            Text('${appt['service']}  ·  Pet: ${appt['pet']}',
+                style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(height: 16),
             TextField(
               controller: noteCtrl,
               style: const TextStyle(color: Colors.white),
               maxLines: 2,
-              decoration: _inputDecor('Reason for rejection'),
+              decoration: _inputDecor('Reason for cancellation (optional)'),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
+            child: Text('Keep Appointment', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Reject', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text('Cancel Appointment', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -193,12 +198,12 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
 
     if (confirmed == true) {
       try {
-        await AdminApiService.rejectAppointment(
+        await AdminApiService.cancelAppointmentByAdmin(
           appt['user_id'] as String,
           appt['id'] as String,
-          doctorNote: noteCtrl.text.trim(),
+          reason: noteCtrl.text.trim(),
         );
-        _showSnack('Appointment rejected', const Color(0xFFEF4444));
+        _showSnack('Appointment cancelled ✔', const Color(0xFF10B981));
         _load();
       } catch (e) {
         _showSnack('Error: $e', const Color(0xFFEF4444));
@@ -565,13 +570,16 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
               ),
             ],
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
               children: [
-                Expanded(
+                SizedBox(
+                  width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => _reject(appt),
-                    icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFEF4444)),
-                    label: Text('Reject',
+                    onPressed: () => _cancelByAdmin(appt),
+                    icon: const Icon(Icons.money_off_rounded, size: 14, color: Color(0xFFEF4444)),
+                    label: Text('Cancel Appointment',
                         style: GoogleFonts.poppins(color: const Color(0xFFEF4444), fontWeight: FontWeight.w600, fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFEF4444)),
@@ -580,34 +588,37 @@ class _StaffAppointmentsPageState extends State<StaffAppointmentsPage>
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _reschedule(appt),
-                    icon: const Icon(Icons.edit_calendar_rounded, size: 14, color: Color(0xFF6366F1)),
-                    label: Text('Reschedule',
-                        style: GoogleFonts.poppins(color: const Color(0xFF6366F1), fontWeight: FontWeight.w600, fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF6366F1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _reschedule(appt),
+                        icon: const Icon(Icons.edit_calendar_rounded, size: 14, color: Color(0xFF6366F1)),
+                        label: Text('Reschedule',
+                            style: GoogleFonts.poppins(color: const Color(0xFF6366F1), fontWeight: FontWeight.w600, fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF6366F1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _approve(appt),
-                    icon: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                    label: Text('Approve',
-                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      elevation: 0,
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _approve(appt),
+                        icon: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                        label: Text('Approve',
+                            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

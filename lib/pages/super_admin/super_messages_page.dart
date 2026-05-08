@@ -236,22 +236,38 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Row(
-        children: [
-          _buildSidebar(),
-          Expanded(
-            child: _activeConvId == null ? _buildEmptyState() : _buildChatPanel(),
-          ),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final isWide = constraints.maxWidth >= 600;
+        if (isWide) {
+          // Tablet / web — side-by-side layout
+          return Container(
+            color: Colors.white,
+            child: Row(
+              children: [
+                SizedBox(width: 280, child: _buildSidebar()),
+                Expanded(
+                  child: _activeConvId == null
+                      ? _buildEmptyState()
+                      : _buildChatPanel(showBack: false),
+                ),
+              ],
+            ),
+          );
+        }
+        // Phone — single-panel layout
+        return Container(
+          color: Colors.white,
+          child: _activeConvId == null
+              ? _buildSidebar()
+              : _buildChatPanel(showBack: true),
+        );
+      },
     );
   }
 
   Widget _buildSidebar() {
     return Container(
-      width: 280,
       decoration: const BoxDecoration(
         color: Color(0xFFF8FAFF),
         border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
@@ -340,18 +356,24 @@ class _SuperMessagesPageState extends State<SuperMessagesPage> {
     );
   }
 
-  Widget _buildChatPanel() {
+  Widget _buildChatPanel({bool showBack = false}) {
     return Column(
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
           ),
           child: Row(
             children: [
+              if (showBack)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_rounded,
+                      size: 18, color: Colors.black87),
+                  onPressed: () => setState(() => _activeConvId = null),
+                ),
               const Icon(Icons.medical_services_rounded, color: Color(0xFF10B981), size: 20),
               const SizedBox(width: 10),
               Expanded(

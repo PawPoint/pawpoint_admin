@@ -110,7 +110,8 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
       duration: const Duration(milliseconds: 250),
       width: _sidebarExpanded ? 240 : 70,
       decoration: const BoxDecoration(
-        color: Color(0xFF000000),
+        color: Colors.white,
+        border: Border(right: BorderSide(color: Colors.black12)),
       ),
       child: Column(
         children: [
@@ -135,8 +136,8 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
       child: Container(
         height: 64,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.black12)),
         ),
         child: _sidebarExpanded
             ? Align(
@@ -148,7 +149,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
                     Text(
                       'PawPoint',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 18,
                       ),
@@ -181,13 +182,13 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
                     children: [
                       const SizedBox(width: 12),
                       Icon(item.icon,
-                          color: selected ? Colors.white : Colors.white70,
+                          color: selected ? Colors.white : Colors.black87,
                           size: 22),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(item.label,
                             style: GoogleFonts.poppins(
-                                color: selected ? Colors.white : Colors.white70,
+                                color: selected ? Colors.white : Colors.black87,
                                 fontWeight: selected
                                     ? FontWeight.w600
                                     : FontWeight.w400,
@@ -199,7 +200,7 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
                   )
                 : Center(
                     child: Icon(item.icon,
-                        color: selected ? Colors.white : Colors.white70,
+                        color: selected ? Colors.white : Colors.black87,
                         size: 22),
                   ),
           ),
@@ -246,22 +247,22 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Colors.black,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
       ),
       child: Row(
         children: [
           if (isMobile)
             Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
+                icon: const Icon(Icons.menu, color: Colors.black),
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
           Text(
             _navItems[_selectedIndex].label,
             style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: Colors.black,
                 fontWeight: FontWeight.w700,
                 fontSize: 18),
           ),
@@ -271,12 +272,12 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(_adminName,
                   style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ),
